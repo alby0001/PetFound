@@ -109,7 +109,7 @@ const upload = multer({
 
 // Pagina di login come home
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Servire le pagine statiche
@@ -121,8 +121,9 @@ app.get('/create.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'create.html'));
 });
 
+// Questo ora punta a index.html invece di login.html
 app.get('/login.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.get('/register.html', (req, res) => {
@@ -291,9 +292,6 @@ app.get('/posts/:id', async (req, res) => {
     res.status(500).json({ error: 'Errore del server durante il recupero del post' });
   }
 });
-
-// Aggiungi questa nuova rotta all'interno del file index.js
-// prima della sezione "Gestione degli errori"
 
 // API per ottenere i post di un utente specifico
 app.get('/user-posts/:userId', async (req, res) => {
