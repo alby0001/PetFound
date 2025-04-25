@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aggiungi animale</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" />
+</head>
+<body>
+  <h2>Segnala un animale</h2>
+
+  <form id="postForm" enctype="multipart/form-data">
+    <div class="status-selection">
+      <label>Stato:</label><br>
+      <div class="radio-group">
+        <input type="radio" id="lost" name="animalStatus" value="smarrito" required checked>
+        <label for="lost">Ho smarrito un animale</label>
+      </div>
+      <div class="radio-group">
+        <input type="radio" id="found" name="animalStatus" value="trovato">
+        <label for="found">Ho trovato un animale</label>
+      </div>
+    </div>
+
+    <label>Tipo di animale:</label><br>
+    <select name="animalType" required>
+      <option value="">-- Seleziona --</option>
+      <option value="cane">Cane</option>
+      <option value="gatto">Gatto</option>
+      <option value="uccello">Uccello</option>
+      <option value="coniglio">Coniglio</option>
+      <option value="altro">Altro</option>
+    </select><br>
+
+    <label><strong>(Descrizione):</strong></label><br>
+    <textarea name="description" placeholder="Descrivi l'animale (razza, colore, caratteristiche particolari, ecc.)" required></textarea><br>
+
+    <label>Immagine:</label><br>
+    <input type="file" name="image" id="imageInput" accept="image/*" required />
+
+    <!-- Container per il ritaglio dell'immagine -->
+    <div id="cropContainer" style="display: none; margin-top: 15px;">
+      <div class="image-container">
+        <img id="imageToEdit" style="max-width: 100%; display: block;" />
+      </div>
+      <div class="crop-controls">
+        <button type="button" id="cropButton">Ritaglia immagine</button>
+      </div>
+    </div>
+
+    <!-- Preview dell'immagine ritagliata -->
+    <div id="previewContainer" style="display: none; margin-top: 15px;">
+      <p>Anteprima:</p>
+      <img id="croppedPreview" style="width: 300px; height: 300px; object-fit: cover; border-radius: 10px;" />
+    </div>
+
+    <!-- Canvas nascosto per il ritaglio -->
+    <canvas id="imageCanvas" style="display: none;"></canvas>
+
+    <label>Località dove l'animale è stato smarrito/trovato:</label><br>
+    <input type="text" id="locationName" name="locationName" placeholder="Inserisci una località">
+    <div id="suggestions" class="suggestions"></div><br>
+
+    <div id="createMap" style="height: 300px; margin-bottom: 15px;"></div>
+
+    <label>Informazioni di contatto:</label><br>
+    <input type="text" name="contactInfo" placeholder="Numero di telefono o email per essere contattato" required><br>
+
+    <button type="submit">Pubblica segnalazione</button>
+  </form>
+
+  <footer>
+    <button onclick="window.location.href='feed.html'">🏠 Vai al feed</button>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+  <script src="common.js"></script>
+  <script src="create.js"></script>
+</body>
+</html>

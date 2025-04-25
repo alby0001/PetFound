@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Feed</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+<body>
+  <nav>
+    <div class="logo">
+      <h1>PetFind</h1>
+    </div>
+    <ul class="nav-links">
+      <li><a href="profile.html">Profilo</a></li>
+      <li><a href="feed.html" class="active">Feed</a></li>
+    </ul>
+  </nav>
+  <h2>Benvenuto nel feed!</h2>
+
+  <!-- Filtri -->
+  <div class="filters-container">
+    <div class="filter-group">
+      <label for="animalTypeFilter">Tipo di animale:</label>
+      <select id="animalTypeFilter">
+        <option value="">Tutti</option>
+        <option value="cane">Cane</option>
+        <option value="gatto">Gatto</option>
+        <option value="uccello">Uccello</option>
+        <option value="altro">Altro</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="statusFilter">Stato:</label>
+      <select id="statusFilter">
+        <option value="">Tutti</option>
+        <option value="smarrito">Smarrito</option>
+        <option value="trovato">Trovato</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="distanceFilter">Distanza massima (km):</label>
+      <input type="range" id="distanceFilter" min="1" max="100" value="50" oninput="updateDistanceLabel(this.value)">
+      <span id="distanceLabel">50 km</span>
+    </div>
+
+    <div class="filter-group">
+      <button id="useMyLocation">Usa la mia posizione</button>
+      <span id="locationStatus"></span>
+    </div>
+
+    <div class="filter-group">
+      <button id="applyFilters">Applica filtri</button>
+    </div>
+  </div>
+
+  <div id="map" style="height: 300px; margin-bottom: 20px;"></div>
+  <div id="feed"></div>
+  <footer>
+    <button onclick="window.location.href='create.html'">➕ Aggiungi animale</button>
+  </footer>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="common.js"></script>
+  <script src="feed.js"></script>
+</body>
+</html>

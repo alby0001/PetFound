@@ -1,0 +1,32 @@
+<!-- public/login.html -->
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="auth-container">
+    <h2>Accedi al tuo account</h2>
+
+    <div id="errorMessage" class="error-box" style="display: none;"></div>
+
+    <form id="loginForm" class="auth-form">
+      <input type="text" id="username" placeholder="Username" required />
+      <div class="error-message" id="usernameLoginError">Inserisci il tuo username</div>
+
+      <input type="password" id="password" placeholder="Password" required />
+      <div class="error-message" id="passwordLoginError">Inserisci la tua password</div>
+
+      <button type="submit">Login</button>
+    </form>
+
+    <p class="auth-switch">Non hai un account? <a href="register.html">Registrati</a></p>
+  </div>
+
+  <script src="common.js"></script>
+  <script src="login.js"></script>
+</body>
+</html>

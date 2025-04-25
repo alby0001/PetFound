@@ -1,0 +1,54 @@
+<!-- public/register.html -->
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Registrazione</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="auth-container">
+    <h2>Crea un nuovo account</h2>
+
+    <form id="registerForm" class="auth-form">
+      <div class="form-row">
+        <div class="form-col">
+          <input type="text" id="regNome" placeholder="Nome *" required />
+          <div class="error-message" id="nomeError">Inserisci il tuo nome</div>
+        </div>
+        <div class="form-col">
+          <input type="text" id="regCognome" placeholder="Cognome *" required />
+          <div class="error-message" id="cognomeError">Inserisci il tuo cognome</div>
+        </div>
+      </div>
+
+      <input type="text" id="regUsername" placeholder="Username *" required />
+      <div class="error-message" id="usernameError">Scegli un username</div>
+
+      <input type="email" id="regEmail" placeholder="Email *" required />
+      <div class="error-message" id="emailError">Inserisci un'email valida</div>
+
+      <label for="regDataNascita">Data di nascita *</label>
+      <input type="date" id="regDataNascita" required />
+      <div class="error-message" id="dataNascitaError">Inserisci la tua data di nascita</div>
+
+      <input type="tel" id="regTelefono" placeholder="Numero di telefono (facoltativo)" />
+      <span class="optional-field">Questo campo è facoltativo</span>
+
+      <input type="password" id="regPassword" placeholder="Password *" required />
+      <div class="error-message" id="passwordError">Scegli una password di almeno 8 caratteri</div>
+
+      <input type="password" id="regConfirmPassword" placeholder="Conferma password *" required />
+      <div class="error-message" id="confirmPasswordError">Le password non coincidono</div>
+
+      <button type="submit">Registrati</button>
+    </form>
+
+    <p class="auth-switch">Hai già un account? <a href="login.html">Accedi</a></p>
+  </div>
+
+  <script src="common.js"></script>
+  <script src="register.js"></script>
+</body>
+</html>
