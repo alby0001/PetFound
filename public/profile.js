@@ -14,6 +14,7 @@ const closeButton = document.querySelector('.close');
 const modalMap = document.getElementById('modalMap');
 
 let modalMapInstance = null;
+let currentPostId = null;
 
 // Impostare le informazioni dell'utente
 profileUsername.textContent = user.username;
@@ -80,8 +81,23 @@ async function loadUserPosts() {
 
 // Funzione per aprire il modal con i dettagli del post
 function openPostModal(post) {
+  // Salva l'ID del post corrente
+  currentPostId = post.id;
+
   const statusClass = post.animalStatus === 'smarrito' ? 'lost-animal' : 'found-animal';
   const statusText = post.animalStatus === 'smarrito' ? 'SMARRITO' : 'TROVATO';
+
+  // Aggiungi i pulsanti di azione solo se l'animale è ancora smarrito
+  const actionButtons = post.animalStatus === 'smarrito' ? `
+    <div class="modal-actions">
+      <button id="markAsFoundButton" class="btn btn-success">Animale trovato</button>
+      <button id="deletePostButton" class="btn btn-danger">Elimina post</button>
+    </div>
+  ` : `
+    <div class="modal-actions">
+      <button id="deletePostButton" class="btn btn-danger">Elimina post</button>
+    </div>
+  `;
 
   modalContent.innerHTML = `
     <div class="modal-header ${statusClass}">
@@ -96,9 +112,21 @@ function openPostModal(post) {
       <p><strong>Contatto:</strong> ${post.contactInfo || 'Nessun contatto specificato'}</p>
       <p><strong>Data pubblicazione:</strong> ${new Date(post.createdAt).toLocaleDateString()}</p>
     </div>
+    ${actionButtons}
   `;
 
   postModal.style.display = 'block';
+
+  // Aggiungi event listener per i pulsanti
+  const deleteButton = document.getElementById('deletePostButton');
+  if (deleteButton) {
+    deleteButton.addEventListener('click', () => deletePost(post.id));
+  }
+
+  const foundButton = document.getElementById('markAsFoundButton');
+  if (foundButton) {
+    foundButton.addEventListener('click', () => markAsFound(post.id));
+  }
 
   // Inizializza la mappa nel modal se ci sono le coordinate
   setTimeout(() => {
@@ -131,6 +159,98 @@ function openPostModal(post) {
   }, 300); // Piccolo ritardo per garantire che il modal sia visibile
 }
 
+// Funzione per eliminare un post
+async function deletePost(postId) {
+  if (!confirm('Sei sicuro di voler eliminare questo post?')) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`/posts/${postId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Errore durante l\'eliminazione del post');
+    }
+
+    // Chiudi il modal e ricarica i post
+    postModal.style.display = 'none';
+    if (modalMapInstance) {
+      modalMapInstance.remove();
+      modalMapInstance = null;
+    }
+
+    // Mostra messaggio di successo
+    showNotification('Post eliminato con successo', 'success');
+
+    // Ricarica i post dell'utente
+    loadUserPosts();
+  } catch (error) {
+    console.error('Errore:', error);
+    showNotification('Errore durante l\'eliminazione del post', 'error');
+  }
+}
+
+// Funzione per segnare un animale come trovato
+async function markAsFound(postId) {
+  try {
+    const response = await fetch(`/posts/${postId}/found`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Errore durante l\'aggiornamento dello stato del post');
+    }
+
+    // Chiudi il modal e ricarica i post
+    postModal.style.display = 'none';
+    if (modalMapInstance) {
+      modalMapInstance.remove();
+      modalMapInstance = null;
+    }
+
+    // Mostra messaggio di successo
+    showNotification('Stato aggiornato a TROVATO', 'success');
+
+    // Ricarica i post dell'utente
+    loadUserPosts();
+  } catch (error) {
+    console.error('Errore:', error);
+    showNotification('Errore durante l\'aggiornamento dello stato', 'error');
+  }
+}
+
+// Funzione per mostrare notifiche all'utente
+function showNotification(message, type = 'info') {
+  // Crea elemento notifica
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.textContent = message;
+
+  // Aggiungi alla pagina
+  document.body.appendChild(notification);
+
+  // Mostra con animazione
+  setTimeout(() => {
+    notification.classList.add('show');
+  }, 10);
+
+  // Rimuovi dopo 3 secondi
+  setTimeout(() => {
+    notification.classList.remove('show');
+    setTimeout(() => {
+      document.body.removeChild(notification);
+    }, 300);
+  }, 3000);
+}
+
 // Gestione della chiusura del modal
 closeButton.addEventListener('click', () => {
   postModal.style.display = 'none';
@@ -138,6 +258,7 @@ closeButton.addEventListener('click', () => {
     modalMapInstance.remove();
     modalMapInstance = null;
   }
+  currentPostId = null;
 });
 
 // Chiudi il modal se si fa clic all'esterno
@@ -148,6 +269,7 @@ window.addEventListener('click', (event) => {
       modalMapInstance.remove();
       modalMapInstance = null;
     }
+    currentPostId = null;
   }
 });
 
