@@ -8,11 +8,14 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+
+// Aggiungi queste dipendenze all'inizio del file
+const sharp = require('sharp');
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
-app.use('/images', express.static('images')); // Aggiungiamo questo per servire le immagini statiche
 app.use(express.static('public'));
 
 // Database setup
@@ -68,12 +71,7 @@ const Post = sequelize.define('Post', {
     defaultValue: 'smarrito'
   },
   animalType: DataTypes.STRING,
-  contactInfo: DataTypes.STRING,
-  // Aggiungiamo un campo per tenere traccia del post originale (se questo è un post "trovato")
-  originalPostId: {
-    type: DataTypes.INTEGER,
-    allowNull: true
-  }
+  contactInfo: DataTypes.STRING
 });
 
 // Relazioni
@@ -110,33 +108,6 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024 // limite di 5MB
   }
 });
-
-// Funzione di autenticazione semplice
-const authenticateUser = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Token di autenticazione non fornito' });
-  }
-
-  const token = authHeader.split(' ')[1];
-
-  try {
-    // In un'implementazione reale, qui verificheresti il token JWT
-    // Per ora, usiamo un approccio semplificato: controlliamo se l'ID utente esiste
-    const userId = parseInt(token);
-    const user = await User.findByPk(userId);
-
-    if (!user) {
-      return res.status(401).json({ error: 'Token non valido' });
-    }
-
-    req.user = user;
-    next();
-  } catch (error) {
-    res.status(401).json({ error: 'Token non valido' });
-  }
-};
 
 // ROUTES
 
@@ -241,8 +212,7 @@ app.post('/posts', upload.single('image'), async (req, res) => {
       longitude, 
       animalStatus, 
       animalType, 
-      contactInfo,
-      originalPostId // Aggiungiamo questo campo
+      contactInfo 
     } = req.body;
 
     // Verifica che l'utente esista
@@ -251,18 +221,12 @@ app.post('/posts', upload.single('image'), async (req, res) => {
       return res.status(404).json({ error: 'Utente non trovato' });
     }
 
-    let imageUrl;
-
-    // Se è specificato un URL dell'immagine esistente (ad es. per "Animale trovato")
-    if (req.body.imageUrl) {
-      imageUrl = req.body.imageUrl;
-    } 
-    // Altrimenti, verifica che sia stata caricata un'immagine
-    else if (!req.file) {
+    // Verifica che sia stata caricata un'immagine
+    if (!req.file) {
       return res.status(400).json({ error: 'Nessuna immagine caricata' });
-    } else {
-      imageUrl = `/uploads/${req.file.filename}`;
     }
+
+    const imageUrl = `/uploads/${req.file.filename}`;
 
     const post = await Post.create({
       imageUrl,
@@ -273,8 +237,7 @@ app.post('/posts', upload.single('image'), async (req, res) => {
       animalStatus,
       animalType,
       contactInfo,
-      UserId: userId,
-      originalPostId: originalPostId || null
+      UserId: userId
     });
 
     res.status(201).json({
@@ -287,8 +250,7 @@ app.post('/posts', upload.single('image'), async (req, res) => {
       animalStatus: post.animalStatus,
       animalType: post.animalType,
       contactInfo: post.contactInfo,
-      createdAt: post.createdAt,
-      originalPostId: post.originalPostId
+      createdAt: post.createdAt
     });
   } catch (error) {
     console.error('Errore nella creazione del post:', error);
@@ -335,39 +297,6 @@ app.get('/posts/:id', async (req, res) => {
   }
 });
 
-// API per eliminare un post
-app.delete('/posts/:id', authenticateUser, async (req, res) => {
-  try {
-    const postId = req.params.id;
-    const post = await Post.findByPk(postId);
-
-    if (!post) {
-      return res.status(404).json({ error: 'Post non trovato' });
-    }
-
-    // Verifica che l'utente sia il proprietario del post
-    if (post.UserId !== req.user.id) {
-      return res.status(403).json({ error: 'Non sei autorizzato a eliminare questo post' });
-    }
-
-    // Se il post ha un'immagine caricata (non un'immagine statica)
-    if (post.imageUrl.startsWith('/uploads/')) {
-      // Rimuovi l'immagine dal filesystem
-      const imagePath = path.join(__dirname, post.imageUrl);
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
-      }
-    }
-
-    await post.destroy();
-
-    res.json({ message: 'Post eliminato con successo' });
-  } catch (error) {
-    console.error('Errore durante l\'eliminazione del post:', error);
-    res.status(500).json({ error: 'Errore del server durante l\'eliminazione del post' });
-  }
-});
-
 // API per ottenere i post di un utente specifico
 app.get('/user-posts/:userId', async (req, res) => {
   try {
@@ -393,6 +322,118 @@ app.get('/user-posts/:userId', async (req, res) => {
   }
 });
 
+// API per eliminare un post
+app.delete('/posts/:id', async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const { userId } = req.body;
+
+    // Trova il post
+    const post = await Post.findByPk(postId);
+
+    if (!post) {
+      return res.status(404).json({ error: 'Post non trovato' });
+    }
+
+    // Verifica che il post appartenga all'utente che sta tentando di eliminarlo
+    if (post.UserId !== parseInt(userId)) {
+      return res.status(403).json({ error: 'Non sei autorizzato a eliminare questo post' });
+    }
+
+    // Elimina il file immagine se esiste
+    if (post.imageUrl) {
+      const imagePath = path.join(__dirname, post.imageUrl.replace(/^\/uploads/, 'uploads'));
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+
+    // Elimina il post dal database
+    await post.destroy();
+
+    res.json({ success: true, message: 'Post eliminato con successo' });
+  } catch (error) {
+    console.error('Errore nell\'eliminazione del post:', error);
+    res.status(500).json({ error: 'Errore del server durante l\'eliminazione del post' });
+  }
+});
+
+// API per marcare un animale come trovato
+app.put('/posts/:id/mark-found', async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const { userId } = req.body;
+
+    // Trova il post
+    const post = await Post.findByPk(postId);
+
+    if (!post) {
+      return res.status(404).json({ error: 'Post non trovato' });
+    }
+
+    // Verifica che il post appartenga all'utente che sta tentando di modificarlo
+    if (post.UserId !== parseInt(userId)) {
+      return res.status(403).json({ error: 'Non sei autorizzato a modificare questo post' });
+    }
+
+    // Procedi solo se l'animale non è già segnato come trovato
+    if (post.animalStatus !== 'trovato') {
+      // Modifica l'immagine aggiungendo lo sticker TROVATO
+      try {
+        // Percorso completo del file immagine
+        const imagePath = path.join(__dirname, post.imageUrl.replace(/^\/uploads/, 'uploads'));
+        // Percorso dello sticker TROVATO
+        const trovato_sticker = path.join(__dirname, 'public', 'trovato-stamp.png');
+
+        // Verifica che i file esistano
+        if (!fs.existsSync(imagePath)) {
+          throw new Error('Immagine originale non trovata');
+        }
+        if (!fs.existsSync(trovato_sticker)) {
+          throw new Error('Sticker TROVATO non trovato');
+        }
+
+        // Ottieni le dimensioni dell'immagine originale
+        const imageMetadata = await sharp(imagePath).metadata();
+
+        // Sovrapponi lo sticker TROVATO all'immagine (ruotato leggermente e semi-trasparente)
+        await sharp(imagePath)
+          .composite([{
+            input: trovato_sticker,
+            blend: 'over',
+            gravity: 'center',
+            // Ridimensiona lo sticker a circa il 70% dell'immagine originale
+            width: Math.floor(imageMetadata.width * 0.7),
+            height: Math.floor(imageMetadata.width * 0.7 * 0.25), // Mantiene le proporzioni dello sticker
+            // Ruota leggermente lo sticker
+            rotate: -15,
+            // Rendi lo sticker leggermente trasparente
+            opacity: 0.9
+          }])
+          .toBuffer()
+          .then(buffer => {
+            // Sovrascrivi l'immagine originale con quella modificata
+            fs.writeFileSync(imagePath, buffer);
+          });
+
+        console.log(`Immagine modificata con successo: ${imagePath}`);
+      } catch (imageError) {
+        console.error('Errore durante la modifica dell\'immagine:', imageError);
+        // Continuiamo comunque con l'aggiornamento dello stato anche se la modifica dell'immagine fallisce
+      }
+
+      // Aggiorna lo stato dell'animale a "trovato"
+      post.animalStatus = 'trovato';
+      await post.save();
+    }
+
+    res.json({ success: true, message: 'Animale contrassegnato come trovato' });
+  } catch (error) {
+    console.error('Errore nell\'aggiornamento del post:', error);
+    res.status(500).json({ error: 'Errore del server durante l\'aggiornamento del post' });
+  }
+});
+
 // Aggiorna la rotta per servire profile.html e profile.js
 app.get('/profile.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'profile.html'));
@@ -400,11 +441,6 @@ app.get('/profile.html', (req, res) => {
 
 app.get('/profile.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'profile.js'));
-});
-
-// Servire il file common.js
-app.get('/common.js', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'common.js'));
 });
 
 // Gestione degli errori
@@ -423,108 +459,6 @@ app.use((err, req, res, next) => {
   }
 
   res.status(500).json({ error: 'Si è verificato un errore interno del server' });
-});
-
-// All'avvio dell'app, crea la directory per le immagini statiche se non esiste
-const imagesDir = path.join(__dirname, 'images');
-if (!fs.existsSync(imagesDir)) {
-  fs.mkdirSync(imagesDir);
-}
-
-// Aggiungi questi endpoint al file index.js prima della riga "// Avvio del server"
-
-// API per eliminare un post
-app.delete('/posts/:id', async (req, res) => {
-  try {
-    const postId = req.params.id;
-
-    // Trova il post
-    const post = await Post.findByPk(postId);
-
-    if (!post) {
-      return res.status(404).json({ error: 'Post non trovato' });
-    }
-
-    // Ottieni il percorso del file immagine
-    const imageUrl = post.imageUrl;
-    const imagePath = path.join(__dirname, imageUrl);
-
-    // Elimina il post dal database
-    await post.destroy();
-
-    // Elimina il file immagine dal filesystem se esiste
-    if (fs.existsSync(imagePath)) {
-      fs.unlinkSync(imagePath);
-    }
-
-    res.json({ message: 'Post eliminato con successo' });
-  } catch (error) {
-    console.error('Errore durante l\'eliminazione del post:', error);
-    res.status(500).json({ error: 'Errore del server durante l\'eliminazione del post' });
-  }
-});
-
-// API per segnare un animale come trovato e applicare lo sticker all'immagine
-app.put('/posts/:id/found', async (req, res) => {
-  try {
-    const postId = req.params.id;
-
-    // Trova il post
-    const post = await Post.findByPk(postId);
-
-    if (!post) {
-      return res.status(404).json({ error: 'Post non trovato' });
-    }
-
-    // Verifica che l'animale sia attualmente smarrito
-    if (post.animalStatus !== 'smarrito') {
-      return res.status(400).json({ error: 'Questo animale è già stato segnato come trovato' });
-    }
-
-    // Ottieni il percorso del file immagine
-    const imageUrl = post.imageUrl;
-    const imagePath = path.join(__dirname, imageUrl);
-
-    // Crea un nuovo nome file per l'immagine con lo sticker
-    const originalFilename = path.basename(imageUrl);
-    const fileExt = path.extname(originalFilename);
-    const newFilename = originalFilename.replace(fileExt, '') + '-trovato' + fileExt;
-    const newImagePath = path.join(path.dirname(imagePath), newFilename);
-    const newImageUrl = imageUrl.replace(originalFilename, newFilename);
-
-    // Carica l'immagine originale
-    const Sharp = require('sharp');
-
-    // Carica lo sticker TROVATO
-    const stickerPath = path.join(__dirname, 'public', 'images', 'trovato-sticker.png');
-
-    // Applica lo sticker all'immagine
-    await Sharp(imagePath)
-      .composite([
-        {
-          input: stickerPath,
-          gravity: 'center'
-        }
-      ])
-      .toFile(newImagePath);
-
-    // Aggiorna il post con il nuovo status e la nuova immagine
-    post.animalStatus = 'trovato';
-    post.imageUrl = newImageUrl;
-    await post.save();
-
-    res.json({ 
-      message: 'Post aggiornato con successo',
-      post: {
-        id: post.id,
-        animalStatus: post.animalStatus,
-        imageUrl: post.imageUrl
-      }
-    });
-  } catch (error) {
-    console.error('Errore durante l\'aggiornamento del post:', error);
-    res.status(500).json({ error: 'Errore del server durante l\'aggiornamento del post' });
-  }
 });
 
 // Avvio del server
