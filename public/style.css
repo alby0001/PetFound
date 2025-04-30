@@ -1,3 +1,21 @@
+
+.post-image {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  margin: 15px 0;
+}
+
+.post img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+  border-radius: var(--border-radius);
+  border: 10px solid var(--white);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease;
+}
 /* Colori principali */
 :root {
   --primary-color: #3498db;
@@ -181,17 +199,14 @@ button:hover, .btn:hover {
 }
 
 /* Immagini nel post */
-.post img {
+.post-image {
   width: 100%;
-  aspect-ratio: 1/1;
-  object-fit: cover;
-  display: block;
-  border-radius: var(--border-radius);
+  position: relative;
   margin: 15px 0;
-  border: 10px solid var(--white);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
-  transition: transform 0.3s ease;
+  overflow: hidden;
 }
+
+
 
 .post img:hover {
   transform: scale(1.02);
@@ -228,6 +243,28 @@ footer button {
   padding: 12px 25px;
   font-size: 18px;
   min-width: 180px;
+}
+
+/* Messaggi e status */
+.error-message {
+  color: var(--accent-color);
+  font-size: 0.9rem;
+  background-color: var(--lost-light);
+  padding: 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+  text-align: center;
+}
+
+.no-results {
+  text-align: center;
+  padding: 30px;
+  background-color: var(--white);
+  border-radius: var(--border-radius);
+  margin: 30px 0;
+  box-shadow: var(--box-shadow);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  color: #666;
 }
 
 /* Suggerimenti per la località */
@@ -314,31 +351,9 @@ footer button {
   flex-direction: column;
 }
 
-.auth-form input[type="text"],
-.auth-form input[type="password"],
-.auth-form input[type="email"],
-.auth-form input[type="tel"],
-.auth-form input[type="date"] {
-  width: 100%;
-  margin-bottom: 15px;
-  padding: 12px;
-  border-radius: 8px;
-  border: 2px solid #ddd;
-  font-size: 16px;
-  box-sizing: border-box;
-}
 
-.auth-form button {
-  padding: 12px 15px;
-  background-color: var(--primary-color);
-  color: var(--white);
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: bold;
-  margin-top: 10px;
-}
+
+
 
 .auth-form button:hover {
   background-color: var(--primary-dark);
@@ -371,13 +386,6 @@ footer button {
 .form-col {
   flex: 1;
   position: relative;
-}
-
-.error-message {
-  color: var(--accent-color);
-  font-size: 0.8rem;
-  margin-top: -10px;
-  margin-bottom: 15px;
 }
 
 .optional-field {
@@ -506,18 +514,9 @@ footer button {
   color: #666;
 }
 
-.post-image {
-  width: 100%;
-  height: 200px;
-  overflow: hidden;
-}
 
-.post-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
+
+
 
 .post-image img:hover {
   transform: scale(1.05);
@@ -609,6 +608,8 @@ footer button {
 .modal-image {
   text-align: center;
   margin-bottom: 25px;
+  position: relative;
+  overflow: hidden;
 }
 
 .modal-image img {
@@ -623,40 +624,203 @@ footer button {
   line-height: 1.6;
 }
 
-/* Active nav link */
-.nav-links .active {
-  font-weight: bold;
-  color: var(--white);
+/* Stili per i filtri */
+.filters-container {
+  background-color: var(--white);
+  padding: 20px;
+  border-radius: var(--border-radius);
+  margin-bottom: 25px;
+  box-shadow: var(--box-shadow);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.filters-main-row {
+  display: flex;
+  gap: 20px;
+}
+
+.filters-col {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.filter-group {
+  flex: 1;
+  min-width: 150px;
+}
+
+.filter-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+/* Slider della distanza */
+.distance-slider {
+  flex: 1;
+  min-width: 150px;
+  max-width: 250px;
+  margin-left: auto;
+  border-left: 1px solid #eee;
+  padding-left: 20px;
+}
+
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#distanceFilter {
+  flex: 1; 
+}
+
+#distanceLabel {
+  min-width: 50px;
+  text-align: right;
+  font-weight: 500;
+}
+
+/* Ricerca località */
+.location-controls {
+  align-items: flex-end;
+}
+
+.location-search {
+  flex: 2;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.search-container {
+  display: flex;
+  margin-top: 5px;
+}
+
+#locationSearch {
+  flex: 1;
+  border-radius: 8px 0 0 8px;
+  margin-bottom: 0;
+}
+
+#searchLocationBtn {
+  padding: 12px 15px;
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 0;
+}
+
+/* Bottone "Usa la mia posizione" */
+.my-location {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.location-btn {
+  padding: 12px 15px;
+  white-space: nowrap;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.location-btn:hover {
   background-color: var(--primary-dark);
 }
 
-/* Custom button style */
-.btn {
+#locationStatus {
+  margin-top: 5px;
+  font-size: 13px;
+  color: #666;
+  font-style: italic;
+  display: block;
+}
+
+/* Aggiunta informazione di distanza nei post */
+.distance-tag {
   display: inline-block;
-  padding: 12px 20px;
   background-color: var(--primary-color);
   color: var(--white);
-  text-decoration: none;
-  border-radius: 8px;
+  padding: 4px 10px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  margin-top: 5px;
   font-weight: bold;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.btn:hover {
-  background-color: var(--primary-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+/* Stile per cerchio di raggio sulla mappa */
+.radius-circle {
+  stroke: var(--primary-color);
+  stroke-opacity: 0.7;
+  fill: var(--primary-color);
+  fill-opacity: 0.1;
 }
 
-#noPosts {
-  text-align: center;
-  padding: 40px;
-  background-color: var(--white);
-  border-radius: var(--border-radius);
-  margin: 30px 0;
-  box-shadow: var(--box-shadow);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+/* Stili per contrassegnare animale come trovato */
+.found-sticker {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  background-color: rgba(76, 175, 80, 0.8);
+  color: white;
+  font-weight: bold;
+  padding: 10px 20px;
+  z-index: 2;
+}
+
+.button-group {
+  display: flex;
+  margin-top: 15px;
+}
+
+.trovato-stamp {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-15deg);
+  width: 80%;
+  max-width: 200px;
+  z-index: 10;
+  opacity: 0.9;
+}
+
+.found-btn {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+/* Messaggio per il controllo touch sulla mappa */
+.touch-info {
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  margin: 10px;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+.user-location-marker {
+  z-index: 1000;
 }
 
 /* Rendering per dispositivi mobili */
@@ -709,6 +873,33 @@ footer button {
     width: 100%;
     justify-content: center;
   }
+
+  .filters-container {
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px;
+  }
+
+  .filters-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .filter-group {
+    width: 100%;
+  }
+
+  .filters-main-row {
+    flex-direction: column;
+  }
+
+  .location-controls {
+    flex-direction: column;
+  }
+
+  .my-location {
+    margin-top: 10px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -726,95 +917,20 @@ footer button {
     gap: 0;
   }
 }
-/* Stili per la sezione filtri - nuova aggiunta */
-.filters-container {
-  background-color: var(--white);
-  padding: 20px;
-  border-radius: var(--border-radius);
-  margin-bottom: 25px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  box-shadow: var(--box-shadow);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+
+/* Immagini più piccole e quadrate nella pagina profilo */
+.user-posts .post-image {
+  aspect-ratio: 1 / 1;
+  height: auto;
+  max-width: 180px;
+  margin: 0 auto 15px auto;
+  overflow: hidden;
 }
 
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  min-width: 150px;
-  flex: 1;
-}
-
-.filter-group label {
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: var(--text-color);
-}
-
-.filter-group select {
-  /* Già definito nel CSS principale */
-}
-
-.filter-group input[type="range"] {
+.user-posts .post-image img {
   width: 100%;
-  margin-bottom: 5px;
-}
-
-.filter-group button {
-  /* I pulsanti sono già definiti nel CSS principale */
-}
-
-#locationStatus {
-  margin-top: 5px;
-  font-size: 0.9em;
-  color: #666;
-}
-
-.user-location-marker {
-  z-index: 1000;
-}
-
-.no-results {
-  text-align: center;
-  padding: 30px;
-  background-color: var(--white);
-  border-radius: var(--border-radius);
-  margin: 30px 0;
-  box-shadow: var(--box-shadow);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  color: #666;
-}
-
-/* Aggiunta informazione di distanza nei post */
-.distance-tag {
-  display: inline-block;
-  background-color: var(--primary-color);
-  color: var(--white);
-  padding: 4px 10px;
-  border-radius: 15px;
-  font-size: 0.8rem;
-  margin-top: 5px;
-  font-weight: bold;
-}
-
-/* Stile per cerchio di raggio sulla mappa */
-.radius-circle {
-  stroke: var(--primary-color);
-  stroke-opacity: 0.7;
-  fill: var(--primary-color);
-  fill-opacity: 0.1;
-}
-
-/* Stili responsive per i filtri */
-@media (max-width: 768px) {
-  .filters-container {
-    flex-direction: column;
-    gap: 15px;
-    padding: 15px;
-  }
-
-  .filter-group {
-    width: 100%;
-  }
+  height: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
 }
