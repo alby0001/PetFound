@@ -358,7 +358,8 @@ app.delete('/posts/:id', async (req, res) => {
   }
 });
 
-// API per marcare un animale come trovato
+// API per contrassegnare un animale come trovato e sovrascriverlo
+// Migliore funzione mark-found con gestione errori dettagliata
 app.put('/posts/:id/mark-found', async (req, res) => {
   try {
     const postId = req.params.id;
@@ -378,59 +379,121 @@ app.put('/posts/:id/mark-found', async (req, res) => {
 
     // Procedi solo se l'animale non è già segnato come trovato
     if (post.animalStatus !== 'trovato') {
-      // Modifica l'immagine aggiungendo lo sticker TROVATO
       try {
-        // Percorso completo del file immagine
-        const imagePath = path.join(__dirname, post.imageUrl.replace(/^\/uploads/, 'uploads'));
-        // Percorso dello sticker TROVATO
-        const trovato_sticker = path.join(__dirname, 'public', 'trovato-stamp.png');
+        // Estrai il nome del file dalla URL
+        const fileNameWithPath = post.imageUrl.replace(/^\/uploads\//, '');
+        const imagePath = path.join(__dirname, 'uploads', fileNameWithPath);
+        const stickerPath = path.join(__dirname, 'public', 'trovato-stamp.png');
+
+        console.log('Verifica percorsi file:');
+        console.log('- Percorso immagine:', imagePath);
+        console.log('- Percorso sticker:', stickerPath);
+
+        // Verifica che le directory esistano
+        if (!fs.existsSync(path.join(__dirname, 'uploads'))) {
+          console.error('Directory uploads non trovata');
+          return res.status(500).json({ error: 'Directory uploads non trovata' });
+        }
+
+        if (!fs.existsSync(path.join(__dirname, 'public'))) {
+          console.error('Directory public non trovata');
+          return res.status(500).json({ error: 'Directory public non trovata' });
+        }
 
         // Verifica che i file esistano
         if (!fs.existsSync(imagePath)) {
-          throw new Error('Immagine originale non trovata');
-        }
-        if (!fs.existsSync(trovato_sticker)) {
-          throw new Error('Sticker TROVATO non trovato');
+          console.error('File immagine non trovato:', imagePath);
+          return res.status(500).json({ error: `Immagine originale non trovata: ${fileNameWithPath}` });
         }
 
-        // Ottieni le dimensioni dell'immagine originale
-        const imageMetadata = await sharp(imagePath).metadata();
+        if (!fs.existsSync(stickerPath)) {
+          console.error('File sticker non trovato:', stickerPath);
+          return res.status(500).json({ error: 'Sticker TROVATO non trovato' });
+        }
 
-        // Sovrapponi lo sticker TROVATO all'immagine (ruotato leggermente e semi-trasparente)
+        // Verifica che l'immagine possa essere letta
+        try {
+          await sharp(imagePath).metadata();
+        } catch (readError) {
+          console.error('Impossibile leggere l\'immagine:', readError);
+          return res.status(500).json({ error: 'Impossibile leggere l\'immagine originale' });
+        }
+
+        // Verifica che lo sticker possa essere letto
+        try {
+          await sharp(stickerPath).metadata();
+        } catch (readError) {
+          console.error('Impossibile leggere lo sticker:', readError);
+          return res.status(500).json({ error: 'Impossibile leggere lo sticker TROVATO' });
+        }
+
+        // Genera un nuovo nome file
+        const timestamp = Date.now();
+        const extension = path.extname(fileNameWithPath);
+        const baseName = path.basename(fileNameWithPath, extension);
+        const newFileName = `trovato_${baseName}_${timestamp}${extension}`;
+        const newFilePath = path.join(__dirname, 'uploads', newFileName);
+
+        console.log('Nuovo file:', newFilePath);
+
+        // Ottieni informazioni sull'immagine
+        const imageInfo = await sharp(imagePath).metadata();
+        console.log('Dimensioni immagine:', imageInfo.width, 'x', imageInfo.height);
+
+        // Calcola dimensioni per lo sticker
+        const stickerWidth = Math.round(imageInfo.width * 0.7);
+        const stickerHeight = Math.round(stickerWidth * 0.7);
+        console.log('Dimensioni sticker calcolate:', stickerWidth, 'x', stickerHeight);
+
+        // Crea un buffer per lo sticker ridimensionato
+        const resizedStickerBuffer = await sharp(stickerPath)
+          .resize(stickerWidth, stickerHeight)
+          .toBuffer();
+
+        // Crea l'immagine composita
         await sharp(imagePath)
           .composite([{
-            input: trovato_sticker,
-            blend: 'over',
+            input: resizedStickerBuffer,
             gravity: 'center',
-            // Ridimensiona lo sticker a circa il 70% dell'immagine originale
-            width: Math.floor(imageMetadata.width * 0.7),
-            height: Math.floor(imageMetadata.width * 0.7 * 0.25), // Mantiene le proporzioni dello sticker
-            // Ruota leggermente lo sticker
-            rotate: -15,
-            // Rendi lo sticker leggermente trasparente
-            opacity: 0.9
+            blend: 'over',
+            rotate: -25
           }])
-          .toBuffer()
-          .then(buffer => {
-            // Sovrascrivi l'immagine originale con quella modificata
-            fs.writeFileSync(imagePath, buffer);
-          });
+          .toFormat('jpeg')
+          .jpeg({ quality: 90 })
+          .toFile(newFilePath);
 
-        console.log(`Immagine modificata con successo: ${imagePath}`);
+        // Verifica che il nuovo file sia stato creato
+        if (!fs.existsSync(newFilePath)) {
+          console.error('File output non creato');
+          return res.status(500).json({ error: 'Errore nella creazione dell\'immagine composita' });
+        }
+
+        // Aggiorna il path dell'immagine nel database
+        post.imageUrl = `/uploads/${newFileName}`;
+        post.animalStatus = 'trovato';
+        await post.save();
+
+        console.log('Post aggiornato con successo con nuova immagine:', post.imageUrl);
+
+        res.json({ 
+          success: true, 
+          message: 'Animale contrassegnato come trovato', 
+          newImageUrl: post.imageUrl 
+        });
       } catch (imageError) {
         console.error('Errore durante la modifica dell\'immagine:', imageError);
-        // Continuiamo comunque con l'aggiornamento dello stato anche se la modifica dell'immagine fallisce
+        console.error(imageError.stack);
+        return res.status(500).json({ 
+          error: `Errore durante la modifica dell'immagine: ${imageError.message}` 
+        });
       }
-
-      // Aggiorna lo stato dell'animale a "trovato"
-      post.animalStatus = 'trovato';
-      await post.save();
+    } else {
+      // L'animale è già contrassegnato come trovato
+      res.json({ success: true, message: 'Animale già contrassegnato come trovato' });
     }
-
-    res.json({ success: true, message: 'Animale contrassegnato come trovato' });
   } catch (error) {
     console.error('Errore nell\'aggiornamento del post:', error);
-    res.status(500).json({ error: 'Errore del server durante l\'aggiornamento del post' });
+    res.status(500).json({ error: `Errore del server: ${error.message}` });
   }
 });
 
