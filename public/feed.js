@@ -19,13 +19,32 @@ function updateDistanceLabel(value) {
     map.removeLayer(radiusCircle);
     drawRadiusCircle(userLocation, currentDistanceFilter);
   }
+
+  // Aggiorna automaticamente i post quando cambia il valore
+  filterAndDisplayPosts();
 }
 
 function initMap() {
-  map = L.map('map').setView([41.9028, 12.4964], 5);
+  // Configurazione della mappa con Gesture Handling per richiedere due dita 
+  // per lo scorrimento su dispositivi touch
+  map = L.map('map', {
+    gestureHandling: true,  // Richiede il plugin leaflet-gesture-handling
+    zoomControl: true
+  }).setView([41.9028, 12.4964], 5);
+
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
+
+  // Aggiungi messaggio per dispositivi touch
+  const touchInfo = L.control({position: 'topright'});
+  touchInfo.onAdd = function() {
+    const div = L.DomUtil.create('div', 'touch-info');
+    div.innerHTML = 'Usa due dita per muovere la mappa';
+    setTimeout(() => { div.style.opacity = 0; }, 5000); // Scompare dopo 5 secondi
+    return div;
+  };
+  touchInfo.addTo(map);
 }
 
 function drawRadiusCircle(location, radiusKm) {
@@ -116,20 +135,59 @@ function getUserLocation() {
   );
 }
 
+// Funzione per cercare una posizione tramite OpenStreetMap Nominatim API
+async function searchLocation(query) {
+  if (!query.trim()) return;
+
+  try {
+    const locationStatus = document.getElementById('locationStatus');
+    locationStatus.textContent = "Ricerca posizione in corso...";
+
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+    const data = await response.json();
+
+    if (data && data.length > 0) {
+      const result = data[0];
+      userLocation = [parseFloat(result.lat), parseFloat(result.lon)];
+
+      locationStatus.textContent = `Posizione trovata: ${result.display_name}`;
+      drawRadiusCircle(userLocation, currentDistanceFilter);
+
+      // Aggiorna i post con la nuova posizione
+      filterAndDisplayPosts();
+    } else {
+      locationStatus.textContent = "Posizione non trovata";
+    }
+  } catch (error) {
+    console.error("Errore nella ricerca della posizione:", error);
+    document.getElementById('locationStatus').textContent = "Errore nella ricerca della posizione";
+  }
+}
+
 // Funzione loadPosts per visualizzare informazioni sugli animali
 async function loadPosts() {
-  const res = await fetch('/posts');
-  allPosts = await res.json();
+  try {
+    const res = await fetch('/posts');
 
-  // Pulisci la mappa dai marker esistenti
-  map.eachLayer((layer) => {
-    if (layer instanceof L.Marker && layer !== userMarker) {
-      map.removeLayer(layer);
+    if (!res.ok) {
+      throw new Error(`Errore nel caricamento dei post: ${res.status}`);
     }
-  });
 
-  // Filtra e mostra i post
-  filterAndDisplayPosts();
+    allPosts = await res.json();
+
+    // Pulisci la mappa dai marker esistenti
+    map.eachLayer((layer) => {
+      if (layer instanceof L.Marker && layer !== userMarker) {
+        map.removeLayer(layer);
+      }
+    });
+
+    // Avvia la geolocalizzazione automaticamente
+    getUserLocation();
+  } catch (error) {
+    console.error("Errore nel caricamento dei post:", error);
+    document.getElementById('feed').innerHTML = '<div class="error-message">Errore nel caricamento dei post. Riprova più tardi.</div>';
+  }
 }
 
 function filterAndDisplayPosts() {
@@ -142,6 +200,12 @@ function filterAndDisplayPosts() {
       map.removeLayer(layer);
     }
   });
+
+  // Controllo se ci sono post da filtrare
+  if (!allPosts || allPosts.length === 0) {
+    feed.innerHTML = '<div class="no-results">Nessun post disponibile.</div>';
+    return;
+  }
 
   // Filtro dei post
   const filteredPosts = allPosts.filter(post => {
@@ -184,52 +248,54 @@ function filterAndDisplayPosts() {
   }
 
   // Mostra i post filtrati
-  filteredPosts.forEach(post => {
-    const statusClass = post.animalStatus === 'smarrito' ? 'lost-animal' : 'found-animal';
-    const statusText = post.animalStatus === 'smarrito' ? 'SMARRITO' : 'TROVATO';
+  if (filteredPosts.length > 0) {
+    filteredPosts.forEach(post => {
+      const statusClass = post.animalStatus === 'smarrito' ? 'lost-animal' : 'found-animal';
+      const statusText = post.animalStatus === 'smarrito' ? 'SMARRITO' : 'TROVATO';
 
-    const div = document.createElement('div');
-    div.className = `post ${statusClass}`;
+      const div = document.createElement('div');
+      div.className = `post ${statusClass}`;
 
-    // Aggiunta distanza se disponibile
-    const distanceHtml = post.distance 
-      ? `<span class="distance-tag">📍 ${post.distance} km</span>` 
-      : '';
+      // Aggiunta distanza se disponibile
+      const distanceHtml = post.distance 
+        ? `<span class="distance-tag">📍 ${post.distance} km</span>` 
+        : '';
 
-    div.innerHTML = `
-      <div class="username">@${post.User.username}</div>
-      <div class="animal-status ${statusClass}">${statusText}: ${post.animalType || 'Animale'}</div>
-      <img src="${post.imageUrl}" /><br/>
-      <p><strong>Descrizione: </strong> ${post.description}</p>
-      ${post.locationName ? `<p><strong>Posizione:</strong> ${post.locationName} ${distanceHtml}</p>` : ''}
-      ${post.contactInfo ? `<p><strong>Contatto:</strong> ${post.contactInfo}</p>` : ''}
-    `;
-    feed.appendChild(div);
+      div.innerHTML = `
+        <div class="username">@${post.User.username}</div>
+        <div class="animal-status ${statusClass}">${statusText}: ${post.animalType || 'Animale'}</div>
+        <div class="post-image">
+          <img src="${post.imageUrl}" alt="${post.animalType || 'Animale'} ${statusText}"/>
+        </div>
+        <p><strong>Descrizione: </strong> ${post.description}</p>
+        ${post.locationName ? `<p class="location"><strong>Posizione:</strong> ${post.locationName} ${distanceHtml}</p>` : ''}
+        ${post.contactInfo ? `<p><strong>Contatto:</strong> ${post.contactInfo}</p>` : ''}
+      `;
+      feed.appendChild(div);
 
-    if (post.latitude && post.longitude) {
-      // Colore diverso in base allo stato
-      const iconColor = post.animalStatus === 'smarrito' ? 'var(--lost-color)' : 'var(--found-color)';
+      if (post.latitude && post.longitude) {
+        // Colore diverso in base allo stato
+        const iconColor = post.animalStatus === 'smarrito' ? 'var(--lost-color)' : 'var(--found-color)';
 
-      // Crea un'icona personalizzata
-      const customIcon = L.divIcon({
-        className: `marker-icon ${post.animalStatus}`,
-        html: `<div style="background-color: ${iconColor}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>`,
-        iconSize: [16, 16],
-        iconAnchor: [8, 8]
-      });
+        // Crea un'icona personalizzata
+        const customIcon = L.divIcon({
+          className: `marker-icon ${post.animalStatus}`,
+          html: `<div style="background-color: ${iconColor}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>`,
+          iconSize: [16, 16],
+          iconAnchor: [8, 8]
+        });
 
-      const marker = L.marker([post.latitude, post.longitude], { icon: customIcon }).addTo(map);
-      marker.bindPopup(`
-        <strong>${post.User.username}</strong><br>
-        <strong>${statusText}:</strong> ${post.animalType || 'Animale'}<br>
-        ${post.locationName || ''}
-        ${post.distance ? `<br>Distanza: ${post.distance} km` : ''}
-      `);
-    }
-  });
-
-  // Mostra messaggio se non ci sono risultati
-  if (filteredPosts.length === 0) {
+        const marker = L.marker([post.latitude, post.longitude], { icon: customIcon }).addTo(map);
+        marker.bindPopup(`
+          <strong>${post.User.username}</strong><br>
+          <strong>${statusText}:</strong> ${post.animalType || 'Animale'}<br>
+          ${post.locationName || ''}
+          ${post.distance ? `<br>Distanza: ${post.distance} km` : ''}
+        `);
+      }
+    });
+  } else {
+    // Mostra messaggio se non ci sono risultati
     const noResults = document.createElement('div');
     noResults.className = 'no-results';
     noResults.textContent = 'Nessun risultato trovato con i filtri selezionati.';
@@ -241,24 +307,42 @@ document.addEventListener('DOMContentLoaded', () => {
   initMap();
   loadPosts();
 
-  // Event listeners per i filtri
+  // Event listeners per i filtri - aggiornamento automatico
   document.getElementById('animalTypeFilter')?.addEventListener('change', (e) => {
     currentAnimalTypeFilter = e.target.value;
+    filterAndDisplayPosts(); // Aggiorna automaticamente
   });
 
   document.getElementById('statusFilter')?.addEventListener('change', (e) => {
     currentStatusFilter = e.target.value;
+    filterAndDisplayPosts(); // Aggiorna automaticamente
   });
 
   document.getElementById('distanceFilter')?.addEventListener('input', (e) => {
     updateDistanceLabel(e.target.value);
+    // filterAndDisplayPosts viene già chiamato in updateDistanceLabel
   });
 
+  // Gestione della posizione utente
   document.getElementById('useMyLocation')?.addEventListener('click', () => {
     getUserLocation();
   });
 
-  document.getElementById('applyFilters')?.addEventListener('click', () => {
-    filterAndDisplayPosts();
+  // Gestione della ricerca di posizione
+  document.getElementById('searchLocationBtn')?.addEventListener('click', () => {
+    const locationQuery = document.getElementById('locationSearch').value.trim();
+    if (locationQuery) {
+      searchLocation(locationQuery);
+    }
+  });
+
+  // Invio della ricerca con il tasto Enter
+  document.getElementById('locationSearch')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      const locationQuery = e.target.value.trim();
+      if (locationQuery) {
+        searchLocation(locationQuery);
+      }
+    }
   });
 });
