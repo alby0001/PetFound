@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Registra il tuo animale - PetFind</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/cropperjs@1.5.12/dist/cropper.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/cropperjs@1.5.12/dist/cropper.min.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <div class="logo">
+        <h1>PetFind</h1>
+      </div>
+      <ul class="nav-links">
+        <li><a href="feed.html">Feed</a></li>
+        <li><a href="profile.html" class="active">Profilo</a></li>
+        <li><a href="#" id="logoutButton">Logout</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="profile-header">
+      <h2>Registra il tuo animale</h2>
+      <p>Inserisci i dati del tuo animale domestico per creare un profilo</p>
+    </section>
+
+    <form id="petForm">
+      <div class="form-row">
+        <div class="form-col">
+          <label for="petName">Nome dell'animale *</label>
+          <input type="text" id="petName" name="petName" required>
+        </div>
+        <div class="form-col">
+          <label for="petType">Tipo di animale *</label>
+          <select id="petType" name="petType" required>
+            <option value="">Seleziona...</option>
+            <option value="Cane">Cane</option>
+            <option value="Gatto">Gatto</option>
+            <option value="Coniglio">Coniglio</option>
+            <option value="Uccello">Uccello</option>
+            <option value="Altro">Altro</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="otherTypeContainer" style="display: none;">
+        <label for="otherType">Specifica il tipo di animale *</label>
+        <input type="text" id="otherType" name="otherType">
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <label for="petBreed">Razza</label>
+          <input type="text" id="petBreed" name="petBreed">
+          <span class="optional-field">Opzionale</span>
+        </div>
+        <div class="form-col">
+          <label for="petAge">Età</label>
+          <input type="text" id="petAge" name="petAge" placeholder="Es: 3 anni">
+          <span class="optional-field">Opzionale</span>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <label for="petGender">Sesso</label>
+          <select id="petGender" name="petGender">
+            <option value="">Seleziona...</option>
+            <option value="Maschio">Maschio</option>
+            <option value="Femmina">Femmina</option>
+          </select>
+          <span class="optional-field">Opzionale</span>
+        </div>
+        <div class="form-col">
+          <label for="petColor">Colore</label>
+          <input type="text" id="petColor" name="petColor">
+          <span class="optional-field">Opzionale</span>
+        </div>
+      </div>
+
+      <label for="petMicrochip">Microchip</label>
+      <input type="text" id="petMicrochip" name="petMicrochip" placeholder="Numero del microchip">
+      <span class="optional-field">Opzionale</span>
+
+      <label for="petNotes">Note e caratteristiche</label>
+      <textarea id="petNotes" name="petNotes" placeholder="Aggiungi qui qualsiasi informazione aggiuntiva sul tuo animale..."></textarea>
+      <span class="optional-field">Opzionale</span>
+
+      <label for="imageInput">Immagine dell'animale *</label>
+      <input type="file" id="imageInput" name="imageInput" accept="image/*" required>
+      <span class="optional-field">Formato consigliato: quadrato</span>
+
+      <!-- Elementi per il ritaglio dell'immagine -->
+      <div id="cropContainer" style="display: none;" class="crop-container">
+        <img id="imageToEdit" src="#" alt="Immagine da ritagliare">
+        <button type="button" id="cropButton" class="btn">Ritaglia immagine</button>
+      </div>
+
+      <div id="previewContainer" style="display: none;" class="preview-container">
+        <p>Anteprima dell'immagine ritagliata:</p>
+        <img id="croppedPreview" src="#" alt="Anteprima immagine ritagliata">
+      </div>
+
+      <!-- Canvas nascosto per manipolare l'immagine se necessario -->
+      <canvas id="imageCanvas" style="display: none;"></canvas>
+
+      <div class="form-buttons">
+        <button type="submit" class="btn">Registra animale</button>
+        <a href="profile.html" class="btn" style="background-color: #ccc;">Annulla</a>
+      </div>
+    </form>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 PetFind - Tutti i diritti riservati</p>
+  </footer>
+
+  <!-- Carica prima common.js e poi register-pet.js -->
+  <script src="common.js"></script>
+  <script src="register-pet.js"></script>
+
+</body>
+</html>
