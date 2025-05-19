@@ -7,11 +7,18 @@ if (!user) {
 // Riferimenti agli elementi DOM
 const profileUsername = document.getElementById('profileUsername');
 const userPostsContainer = document.getElementById('userPostsContainer');
+const userPetsContainer = document.getElementById('userPetsContainer');
 const noPosts = document.getElementById('noPosts');
+const noPets = document.getElementById('noPets');
 const postModal = document.getElementById('postModal');
+const petModal = document.getElementById('petModal');
 const modalContent = document.getElementById('modalContent');
+const petModalContent = document.getElementById('petModalContent');
 const closeButton = document.querySelector('.close');
+const petCloseButton = document.querySelector('.pet-close');
 const modalMap = document.getElementById('modalMap');
+const showPostsTab = document.getElementById('showPostsTab');
+const showPetsTab = document.getElementById('showPetsTab');
 
 let modalMapInstance = null;
 
@@ -23,6 +30,24 @@ document.getElementById('logoutButton').addEventListener('click', (e) => {
   e.preventDefault();
   localStorage.removeItem('user');
   window.location.href = '/login.html';
+});
+
+// Gestione dei tab
+showPostsTab.addEventListener('click', (e) => {
+  e.preventDefault();
+  userPostsContainer.style.display = 'grid';
+  userPetsContainer.style.display = 'none';
+  showPostsTab.classList.add('active');
+  showPetsTab.classList.remove('active');
+});
+
+showPetsTab.addEventListener('click', (e) => {
+  e.preventDefault();
+  userPostsContainer.style.display = 'none';
+  userPetsContainer.style.display = 'block'; // Cambiato da 'grid' a 'block' per garantire la visualizzazione corretta
+  showPostsTab.classList.remove('active');
+  showPetsTab.classList.add('active');
+  loadUserPets(); // Carica gli animali dell'utente
 });
 
 // Caricamento dei post dell'utente
@@ -55,8 +80,7 @@ async function loadUserPosts() {
           <div class="post-date">${new Date(post.createdAt).toLocaleDateString()}</div>
         </div>
         <div class="post-image">
-          <img src="${post.imageUrl}" alt="${post.animalType || 'Animale'}">
-          ${post.animalStatus === 'trovato' ? '<img class="trovato-stamp" src="/trovato-stamp.png" alt="TROVATO">' : ''}
+          <img src="${post.imageUrl}?t=${Date.now()}" alt="${post.animalType || 'Animale'}">
         </div>
         <div class="post-info">
           <h4>${post.animalType || 'Animale'}</h4>
@@ -94,8 +118,7 @@ function openPostModal(post) {
       <h3>${statusText}: ${post.animalType || 'Animale'}</h3>
     </div>
     <div class="modal-image">
-      <img src="${post.imageUrl}" alt="${post.animalType || 'Animale'}">
-      ${post.animalStatus === 'trovato' ? '<img class="trovato-stamp" src="/trovato-stamp.png" alt="TROVATO">' : ''}
+      <img src="${post.imageUrl}?t=${Date.now()}" alt="${post.animalType || 'Animale'}">
     </div>
     <div class="modal-details">
       <p><strong>Descrizione:</strong> ${post.description || 'Nessuna descrizione disponibile'}</p>
@@ -151,6 +174,10 @@ closeButton.addEventListener('click', () => {
   }
 });
 
+petCloseButton.addEventListener('click', () => {
+  petModal.style.display = 'none';
+});
+
 // Chiudi il modal se si fa clic all'esterno
 window.addEventListener('click', (event) => {
   if (event.target === postModal) {
@@ -159,6 +186,9 @@ window.addEventListener('click', (event) => {
       modalMapInstance.remove();
       modalMapInstance = null;
     }
+  }
+  if (event.target === petModal) {
+    petModal.style.display = 'none';
   }
 });
 
