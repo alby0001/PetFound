@@ -13,10 +13,11 @@ const PORT = process.env.PORT || 3000;
 const sharp = require('sharp');
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use('/uploads', express.static('uploads'));
 app.use(express.static('public'));
+app.use('/assets', express.static('public/assets'));
 
 // Database setup
 const sequelize = new Sequelize({
@@ -77,6 +78,32 @@ const Post = sequelize.define('Post', {
 // Relazioni
 User.hasMany(Post);
 Post.belongsTo(User);
+
+// Aggiungi questo modello dopo le definizioni degli altri modelli
+const Pet = sequelize.define('Pet', {
+  petName: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  petType: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  petBreed: DataTypes.STRING,
+  petAge: DataTypes.STRING,
+  petGender: DataTypes.STRING,
+  petColor: DataTypes.STRING,
+  petMicrochip: DataTypes.STRING,
+  petNotes: DataTypes.TEXT,
+  imageUrl: {
+    type: DataTypes.STRING,
+    allowNull: false
+  }
+});
+
+// Aggiungi le relazioni
+User.hasMany(Pet);
+Pet.belongsTo(User);
 
 // Configurazione di Multer per l'upload delle immagini
 const storage = multer.diskStorage({
@@ -141,6 +168,19 @@ app.get('/style.css', (req, res) => {
 
 app.get('/script.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'script.js'));
+});
+
+// Servire le nuove pagine per la segnalazione di animali smarriti
+app.get('/report-lost.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'report-lost.html'));
+});
+
+app.get('/report-lost.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'report-lost-form.js'));
+});
+
+app.get('/report-lost-form.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'report-lost-form.js'));
 });
 
 // API per la registrazione
@@ -506,33 +546,192 @@ app.get('/profile.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'profile.js'));
 });
 
-// Gestione degli errori
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-
-  if (err.message === 'Solo i file immagine sono consentiti') {
-    return res.status(400).json({ error: err.message });
-  }
-
-  if (err instanceof multer.MulterError) {
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ error: 'File troppo grande (massimo 5MB)' });
-    }
-    return res.status(400).json({ error: err.message });
-  }
-
-  res.status(500).json({ error: 'Si è verificato un errore interno del server' });
+// Servire la pagina di registrazione dell'animale
+app.get('/register-pet.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'register-pet.html'));
 });
 
-// Avvio del server
-sequelize.sync()
-  .then(() => {
+app.get('/register-pet.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'register-pet.js'));
+});
+
+// Servire le librerie Cropper.js (se necessario)
+app.get('/cropper.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cropper.js'));
+});
+
+app.get('/cropper.css', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'cropper.css'));
+});
+
+// API per registrare un nuovo animale domestico
+app.post('/pets', async (req, res) => {
+  try {
+    const { 
+      userId, 
+      petName, 
+      petType, 
+      petBreed, 
+      petAge, 
+      petGender, 
+      petColor, 
+      petMicrochip, 
+      petNotes, 
+      image 
+    } = req.body;
+
+    // Verifica che l'utente esista
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Utente non trovato' });
+    }
+
+    // Verifica che sia stata inviata un'immagine
+    if (!image) {
+      return res.status(400).json({ error: 'Nessuna immagine fornita' });
+    }
+
+    // Estrai i dati dell'immagine
+    const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+
+    // Genera un nome file univoco
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = '.jpg'; // Forziamo l'estensione a jpg
+    const fileName = `pet_${uniqueSuffix}${ext}`;
+    const filePath = path.join(__dirname, 'uploads', fileName);
+
+    // Assicurati che la directory uploads esista
+    if (!fs.existsSync(path.join(__dirname, 'uploads'))) {
+      fs.mkdirSync(path.join(__dirname, 'uploads'));
+    }
+
+    // Salva l'immagine sul disco
+    fs.writeFileSync(filePath, imageBuffer);
+
+    const imageUrl = `/uploads/${fileName}`;
+
+    // Crea il record del pet nel database
+    const pet = await Pet.create({
+      petName,
+      petType,
+      petBreed,
+      petAge,
+      petGender,
+      petColor,
+      petMicrochip,
+      petNotes,
+      imageUrl,
+      UserId: userId
+    });
+
+    res.status(201).json({
+      success: true,
+      pet: {
+        id: pet.id,
+        petName: pet.petName,
+        petType: pet.petType,
+        imageUrl: pet.imageUrl,
+        createdAt: pet.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Errore nella registrazione dell\'animale:', error);
+    res.status(500).json({ error: 'Errore del server durante la registrazione dell\'animale' });
+  }
+});
+
+// API per ottenere tutti gli animali di un utente
+app.get('/pets/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // Verifica che l'utente esista
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Utente non trovato' });
+    }
+
+    const pets = await Pet.findAll({
+      where: {
+        UserId: userId
+      },
+      order: [['createdAt', 'DESC']]
+    });
+
+    res.json(pets);
+  } catch (error) {
+    console.error('Errore nel recupero degli animali domestici:', error);
+    res.status(500).json({ error: 'Errore del server durante il recupero degli animali domestici' });
+  }
+});
+
+// API per ottenere un singolo animale
+app.get('/pets/details/:id', async (req, res) => {
+  try {
+    const pet = await Pet.findByPk(req.params.id, {
+      include: [{ 
+        model: User, 
+        attributes: ['username'] 
+      }]
+    });
+
+    if (!pet) {
+      return res.status(404).json({ error: 'Animale non trovato' });
+    }
+
+    res.json(pet);
+  } catch (error) {
+    console.error('Errore nel recupero dell\'animale:', error);
+    res.status(500).json({ error: 'Errore del server durante il recupero dell\'animale' });
+  }
+});
+
+// API per eliminare un animale
+app.delete('/pets/:id', async (req, res) => {
+  try {
+    const petId = req.params.id;
+    const { userId } = req.body;
+
+    // Trova il pet
+    const pet = await Pet.findByPk(petId);
+
+    if (!pet) {
+      return res.status(404).json({ error: 'Animale non trovato' });
+    }
+
+    // Verifica che il pet appartenga all'utente che sta tentando di eliminarlo
+    if (pet.UserId !== parseInt(userId)) {
+      return res.status(403).json({ error: 'Non sei autorizzato a eliminare questo animale' });
+    }
+
+    // Elimina il file immagine se esiste
+    if (pet.imageUrl) {
+      const imagePath = path.join(__dirname, pet.imageUrl.replace(/^\/uploads/, 'uploads'));
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+
+    // Elimina il pet dal database
+    await pet.destroy();
+
+    res.json({ success: true, message: 'Animale eliminato con successo' });
+    } catch (error) {
+    console.error('Errore nell\'eliminazione dell\'animale:', error);
+    res.status(500).json({ error: 'Errore del server durante l\'eliminazione dell\'animale' });
+    }
+    });
+
+    // Avvio del server
+    sequelize.sync()
+    .then(() => {
     app.listen(PORT, () => {
       console.log(`✅ Server avviato con successo su http://localhost:${PORT}`);
       console.log(`📱 Feed disponibile su http://localhost:${PORT}/feed.html`);
       console.log(`📝 Crea post disponibile su http://localhost:${PORT}/create.html`);
     });
-  })
-  .catch(error => {
+    })
+    .catch(error => {
     console.error('Errore durante la sincronizzazione del database:', error);
-  });
+    });
