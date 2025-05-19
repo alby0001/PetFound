@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Segnala Animale Smarrito</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <link rel="stylesheet" href="cropper.css" />
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script src="cropper.js"></script>
+</head>
+<body>
+  <header>
+    <nav>
+      <div class="logo">
+        <h1>PetFind</h1>
+      </div>
+      <ul class="nav-links">
+        <li><a href="feed.html">Feed</a></li>
+        <li><a href="profile.html">Profilo</a></li>
+        <li><a href="#" id="logoutButton">Logout</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="create-post">
+      <h2>Segnala Animale Smarrito</h2>
+      <p class="subheading">Stai segnalando lo smarrimento di <strong id="petNameHeader"></strong></p>
+
+      <form id="postForm" class="form-container">
+        <!-- Campo nascosto per lo stato dell'animale -->
+        <input type="hidden" name="animalStatus" value="smarrito" checked>
+
+        <div class="form-group">
+          <label for="animalType">Tipo di animale</label>
+          <input type="text" id="animalType" name="animalType" readonly>
+        </div>
+
+        <div class="form-group">
+          <label for="description">Descrizione</label>
+          <textarea id="description" name="description" rows="4" placeholder="Inserisci ulteriori dettagli sullo smarrimento..." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="locationName">Luogo dello smarrimento</label>
+          <input type="text" id="locationName" name="locationName" placeholder="Inserisci il luogo dove è stato smarrito..." required>
+          <div id="suggestions" class="suggestions-box"></div>
+        </div>
+
+        <div class="form-group">
+          <label>Seleziona la posizione sulla mappa</label>
+          <div id="createMap" style="height: 300px;"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="contactInfo">Informazioni di contatto</label>
+          <input type="text" id="contactInfo" name="contactInfo" placeholder="Inserisci un numero di telefono o email..." required>
+        </div>
+
+        <div class="form-group">
+          <label>Immagine dell'animale</label>
+          <div class="image-preview-container">
+            <img id="petImage" src="" alt="Immagine dell'animale" class="pet-image-preview">
+            <div id="cropperContainer" style="display: none;">
+              <div class="cropper-controls">
+                <button type="button" id="cropBtn">Ritaglia</button>
+                <button type="button" id="cancelCropBtn">Annulla</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <button type="submit" class="btn btn-primary">Pubblica Segnalazione</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 PetFind - Tutti i diritti riservati</p>
+  </footer>
+
+  <script src="report-lost-form.js"></script>
+  <script src="common.js"></script>
+</body>
+</html>-
