@@ -31,7 +31,8 @@
     </section>
 
     <section class="profile-tabs">
-      <h3>Le mie segnalazioni</h3>
+      <a href="#" class="active" id="showPostsTab">Le mie segnalazioni</a>
+      <a href="#" id="showPetsTab">I miei animali</a>
     </section>
 
     <section id="userPostsContainer" class="user-posts">
@@ -39,6 +40,24 @@
       <div id="noPosts" style="display:none;">
         <p>Non hai ancora pubblicato segnalazioni.</p>
         <a href="create.html" class="btn">Crea la tua prima segnalazione</a>
+      </div>
+    </section>
+
+    <section id="userPetsContainer" class="user-posts" style="display:none;">
+      <!-- I pulsanti appariranno solo nella scheda "I miei animali" -->
+      <div id="petActions" style="margin-bottom: 20px; text-align: right; display: flex; justify-content: flex-end; gap: 10px;">
+        <a href="register-pet.html" class="btn">Registra nuovo animale</a>
+        <a href="#" id="reportLostPetBtn" class="btn btn-warning">Ho smarrito un animale</a>
+      </div>
+
+      <!-- Gli animali dell'utente verranno caricati qui dinamicamente -->
+      <div id="petsContent">
+        <!-- Contenuto degli animali sarà aggiunto dinamicamente qui -->
+      </div>
+
+      <div id="noPets" style="display:none;">
+        <p>Non hai ancora registrato nessun animale.</p>
+        <a href="register-pet.html" class="btn">Registra il tuo primo animale</a>
       </div>
     </section>
 
@@ -52,14 +71,37 @@
         <div id="modalMap" style="height: 300px; margin-top: 15px;"></div>
       </div>
     </div>
-  </main>
+
+    <!-- Modal per visualizzare i dettagli dell'animale -->
+    <div id="petModal" class="modal">
+      <div class="modal-content">
+        <span class="close pet-close">&times;</span>
+        <div id="petModalContent">
+          <!-- Il contenuto dell'animale verrà caricato qui -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal per la selezione dell'animale smarrito -->
+    <div id="selectPetModal" class="modal">
+      <div class="modal-content">
+        <span class="close select-pet-close">&times;</span>
+        <h3>Seleziona l'animale che hai smarrito</h3>
+        <div id="selectPetContent" class="pets-grid">
+          <!-- Gli animali dell'utente verranno caricati qui per la selezione -->
+        </div>
+      </div>
+    </div>
 
   <footer>
     <p>&copy; 2025 PetFind - Tutti i diritti riservati</p>
   </footer>
 
   <script src="profile.js"></script>
+  <script src="pets.js"></script>
   <script src="common.js"></script>
-  
+  <script src="report-lost.js"></script>
+  <!-- <script src="script-debug.js"></script> -->
+
 </body>
 </html>
