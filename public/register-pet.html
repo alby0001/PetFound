@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Registra il tuo animale - PetFind</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://unpkg.com/cropperjs@1.5.12/dist/cropper.min.js"></script>
-  <link rel="stylesheet" href="https://unpkg.com/cropperjs@1.5.12/dist/cropper.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" />
 </head>
 <body>
   <header>
@@ -90,22 +89,26 @@
       <textarea id="petNotes" name="petNotes" placeholder="Aggiungi qui qualsiasi informazione aggiuntiva sul tuo animale..."></textarea>
       <span class="optional-field">Opzionale</span>
 
-      <label for="imageInput">Immagine dell'animale *</label>
-      <input type="file" id="imageInput" name="imageInput" accept="image/*" required>
-      <span class="optional-field">Formato consigliato: quadrato</span>
+      <label>Immagine dell'animale *</label><br>
+      <input type="file" name="image" id="imageInput" accept="image/*" required />
 
-      <!-- Elementi per il ritaglio dell'immagine -->
-      <div id="cropContainer" style="display: none;" class="crop-container">
-        <img id="imageToEdit" src="#" alt="Immagine da ritagliare">
-        <button type="button" id="cropButton" class="btn">Ritaglia immagine</button>
+      <!-- Container per il ritaglio dell'immagine - identico a create.html -->
+      <div id="cropContainer" style="display: none; margin-top: 15px;">
+        <div class="image-container">
+          <img id="imageToEdit" style="max-width: 100%; display: block;" />
+        </div>
+        <div class="crop-controls">
+          <button type="button" id="cropButton">Ritaglia immagine</button>
+        </div>
       </div>
 
-      <div id="previewContainer" style="display: none;" class="preview-container">
-        <p>Anteprima dell'immagine ritagliata:</p>
-        <img id="croppedPreview" src="#" alt="Anteprima immagine ritagliata">
+      <!-- Preview dell'immagine ritagliata - identico a create.html -->
+      <div id="previewContainer" style="display: none; margin-top: 15px;">
+        <p>Anteprima:</p>
+        <img id="croppedPreview" style="width: 300px; height: 300px; object-fit: cover; border-radius: 10px;" />
       </div>
 
-      <!-- Canvas nascosto per manipolare l'immagine se necessario -->
+      <!-- Canvas nascosto per il ritaglio - identico a create.html -->
       <canvas id="imageCanvas" style="display: none;"></canvas>
 
       <div class="form-buttons">
@@ -119,7 +122,7 @@
     <p>&copy; 2025 PetFind - Tutti i diritti riservati</p>
   </footer>
 
-  <!-- Carica prima common.js e poi register-pet.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
   <script src="common.js"></script>
   <script src="register-pet.js"></script>
 
