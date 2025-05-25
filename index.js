@@ -8,7 +8,6 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-
 // Aggiungi queste dipendenze all'inizio del file
 const sharp = require('sharp');
 
@@ -19,12 +18,34 @@ app.use('/uploads', express.static('uploads'));
 app.use(express.static('public'));
 app.use('/assets', express.static('public/assets'));
 
-// Database setup
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: 'database.sqlite',
-  logging: false // Disabilita i log SQL per un output più pulito
+// Database setup - Configurazione per PostgreSQL su Render
+const sequelize = new Sequelize(process.env.DATABASE_URL || 'postgresql://localhost:5432/petfinder', {
+  dialect: 'postgres',
+  protocol: 'postgres',
+  logging: false, // Disabilita i log SQL per un output più pulito
+  dialectOptions: {
+    ssl: process.env.NODE_ENV === 'production' ? {
+      require: true,
+      rejectUnauthorized: false
+    } : false
+  },
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
+  }
 });
+
+// Test della connessione al database
+async function testDatabaseConnection() {
+  try {
+    await sequelize.authenticate();
+    console.log('✅ Connessione al database PostgreSQL stabilita con successo.');
+  } catch (error) {
+    console.error('❌ Impossibile connettersi al database:', error);
+  }
+}
 
 // Models
 const User = sequelize.define('User', {
@@ -717,21 +738,34 @@ app.delete('/pets/:id', async (req, res) => {
     await pet.destroy();
 
     res.json({ success: true, message: 'Animale eliminato con successo' });
-    } catch (error) {
+  } catch (error) {
     console.error('Errore nell\'eliminazione dell\'animale:', error);
     res.status(500).json({ error: 'Errore del server durante l\'eliminazione dell\'animale' });
-    }
-    });
+  }
+});
 
-    // Avvio del server
-    sequelize.sync()
-    .then(() => {
+// Avvio del server con test della connessione al database
+async function startServer() {
+  try {
+    // Testa la connessione al database
+    await testDatabaseConnection();
+    
+    // Sincronizza i modelli con il database
+    await sequelize.sync();
+    console.log('✅ Database sincronizzato con successo');
+    
+    // Avvia il server
     app.listen(PORT, () => {
       console.log(`✅ Server avviato con successo su http://localhost:${PORT}`);
       console.log(`📱 Feed disponibile su http://localhost:${PORT}/feed.html`);
       console.log(`📝 Crea post disponibile su http://localhost:${PORT}/create.html`);
+      console.log(`🗄️ Database: ${process.env.DATABASE_URL ? 'PostgreSQL (Render)' : 'Fallback locale'}`);
     });
-    })
-    .catch(error => {
-    console.error('Errore durante la sincronizzazione del database:', error);
-    });
+  } catch (error) {
+    console.error('❌ Errore durante l\'avvio del server:', error);
+    process.exit(1);
+  }
+}
+
+// Avvia il server
+startServer();
