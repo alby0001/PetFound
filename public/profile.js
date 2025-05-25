@@ -25,6 +25,29 @@ let modalMapInstance = null;
 // Impostare le informazioni dell'utente
 profileUsername.textContent = user.username;
 
+// Funzione per gestire i parametri URL
+function handleURLParameters() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const tab = urlParams.get('tab');
+  const action = urlParams.get('action');
+
+  if (tab === 'pets') {
+    // Attiva il tab "I miei animali"
+    showPetsTab.click();
+
+    if (action === 'report-lost') {
+      // Attendere un po' per assicurarsi che il tab sia caricato
+      setTimeout(() => {
+        // Triggerare il click sul pulsante "Ho smarrito un animale"
+        const reportLostBtn = document.getElementById('reportLostPetBtn');
+        if (reportLostBtn) {
+          reportLostBtn.click();
+        }
+      }, 500);
+    }
+  }
+}
+
 // Gestione del logout
 document.getElementById('logoutButton').addEventListener('click', (e) => {
   e.preventDefault();
@@ -39,6 +62,12 @@ showPostsTab.addEventListener('click', (e) => {
   userPetsContainer.style.display = 'none';
   showPostsTab.classList.add('active');
   showPetsTab.classList.remove('active');
+
+  // Pulisce i parametri URL quando si cambia tab
+  const url = new URL(window.location);
+  url.searchParams.delete('tab');
+  url.searchParams.delete('action');
+  window.history.replaceState({}, '', url);
 });
 
 showPetsTab.addEventListener('click', (e) => {
@@ -282,5 +311,8 @@ document.addEventListener('click', function(e) {
   }
 });
 
-// Carica i post dell'utente quando la pagina è pronta
-document.addEventListener('DOMContentLoaded', loadUserPosts);
+// Carica i post dell'utente quando la pagina è pronta e gestisce i parametri URL
+document.addEventListener('DOMContentLoaded', () => {
+  loadUserPosts();
+  handleURLParameters(); // Gestisce i parametri URL dopo il caricamento della pagina
+});
