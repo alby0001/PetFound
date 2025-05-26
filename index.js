@@ -4,12 +4,31 @@ const bcrypt = require('bcrypt');
 const { Sequelize, DataTypes } = require('sequelize');
 const path = require('path');
 const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Aggiungi queste dipendenze all'inizio del file
 const sharp = require('sharp');
+
+// Configurazione Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Test della connessione a Cloudinary
+async function testCloudinaryConnection() {
+  try {
+    const result = await cloudinary.api.ping();
+    console.log('✅ Connessione a Cloudinary stabilita con successo:', result);
+  } catch (error) {
+    console.error('❌ Errore nella connessione a Cloudinary:', error);
+  }
+}
 
 // Middleware
 app.use(express.json({ limit: '50mb' }));
@@ -83,6 +102,10 @@ const Post = sequelize.define('Post', {
     type: DataTypes.STRING,
     allowNull: false
   },
+  cloudinaryId: {
+    type: DataTypes.STRING,
+    allowNull: true // Per compatibilità con immagini esistenti
+  },
   description: DataTypes.TEXT,
   locationName: DataTypes.STRING,
   latitude: DataTypes.FLOAT,
@@ -119,6 +142,10 @@ const Pet = sequelize.define('Pet', {
   imageUrl: {
     type: DataTypes.STRING,
     allowNull: false
+  },
+  cloudinaryId: {
+    type: DataTypes.STRING,
+    allowNull: true // Per compatibilità con immagini esistenti
   }
 });
 
@@ -126,36 +153,100 @@ const Pet = sequelize.define('Pet', {
 User.hasMany(Pet);
 Pet.belongsTo(User);
 
-// Configurazione di Multer per l'upload delle immagini
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const dir = './uploads';
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-    cb(null, dir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, `${uniqueSuffix}${ext}`);
+// Configurazione di Cloudinary Storage per Multer
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'petfinder', // Cartella su Cloudinary
+    allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+    transformation: [
+      { width: 1200, height: 1200, crop: 'limit' }, // Ridimensiona se necessario
+      { quality: 'auto' } // Ottimizzazione automatica della qualità
+    ]
   }
 });
 
-// Filtro per accettare solo immagini
-const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith('image/')) {
-    cb(null, true);
-  } else {
-    cb(new Error('Solo i file immagine sono consentiti'), false);
-  }
-};
-
+// Configurazione di Multer con Cloudinary
 const upload = multer({ 
-  storage, 
-  fileFilter,
+  storage,
   limits: {
-    fileSize: 5 * 1024 * 1024 // limite di 5MB
+    fileSize: 10 * 1024 * 1024 // limite di 10MB (Cloudinary può gestire file più grandi)
   }
 });
+
+// Funzione helper per caricare immagine base64 su Cloudinary
+async function uploadBase64ToCloudinary(base64Image, folder = 'petfinder') {
+  try {
+    const result = await cloudinary.uploader.upload(base64Image, {
+      folder: folder,
+      transformation: [
+        { width: 1200, height: 1200, crop: 'limit' },
+        { quality: 'auto' }
+      ]
+    });
+    return {
+      url: result.secure_url,
+      publicId: result.public_id
+    };
+  } catch (error) {
+    console.error('Errore upload Cloudinary:', error);
+    throw error;
+  }
+}
+
+// Funzione helper per applicare lo stamp "TROVATO" su Cloudinary
+async function applyFoundStampCloudinary(originalPublicId) {
+  try {
+    // Carica lo stamp su Cloudinary se non è già presente
+    let stampResult;
+    try {
+      // Controlla se lo stamp esiste già
+      await cloudinary.api.resource('petfinder/trovato-stamp');
+      stampResult = { public_id: 'petfinder/trovato-stamp' };
+    } catch (error) {
+      // Se non esiste, caricalo
+      const stampPath = path.join(__dirname, 'public', 'trovato-stamp.png');
+      if (fs.existsSync(stampPath)) {
+        stampResult = await cloudinary.uploader.upload(stampPath, {
+          public_id: 'petfinder/trovato-stamp',
+          folder: 'petfinder'
+        });
+      } else {
+        throw new Error('File stamp non trovato localmente');
+      }
+    }
+
+    // Applica la trasformazione con overlay
+    const transformedUrl = cloudinary.url(originalPublicId, {
+      transformation: [
+        {
+          overlay: stampResult.public_id.replace('/', ':'),
+          width: '0.7', // 70% della larghezza dell'immagine
+          flags: 'relative',
+          gravity: 'center',
+          angle: -25
+        },
+        { quality: 'auto' }
+      ]
+    });
+
+    // Carica la nuova immagine trasformata come nuovo asset
+    const newResult = await cloudinary.uploader.upload(transformedUrl, {
+      folder: 'petfinder',
+      transformation: [
+        { quality: 'auto' }
+      ]
+    });
+
+    return {
+      url: newResult.secure_url,
+      publicId: newResult.public_id
+    };
+  } catch (error) {
+    console.error('Errore nell\'applicazione dello stamp:', error);
+    throw error;
+  }
+}
 
 // ROUTES
 
@@ -262,7 +353,7 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// API per creare un nuovo post
+// API per creare un nuovo post (ora con Cloudinary)
 app.post('/posts', upload.single('image'), async (req, res) => {
   try {
     const { 
@@ -287,10 +378,13 @@ app.post('/posts', upload.single('image'), async (req, res) => {
       return res.status(400).json({ error: 'Nessuna immagine caricata' });
     }
 
-    const imageUrl = `/uploads/${req.file.filename}`;
+    // L'immagine è già stata caricata su Cloudinary tramite multer
+    const imageUrl = req.file.path; // URL di Cloudinary
+    const cloudinaryId = req.file.filename; // Public ID di Cloudinary
 
     const post = await Post.create({
       imageUrl,
+      cloudinaryId,
       description,
       locationName,
       latitude: latitude ? parseFloat(latitude) : null,
@@ -304,6 +398,7 @@ app.post('/posts', upload.single('image'), async (req, res) => {
     res.status(201).json({
       id: post.id,
       imageUrl: post.imageUrl,
+      cloudinaryId: post.cloudinaryId,
       description: post.description,
       locationName: post.locationName,
       latitude: post.latitude,
@@ -383,7 +478,7 @@ app.get('/user-posts/:userId', async (req, res) => {
   }
 });
 
-// API per eliminare un post
+// API per eliminare un post (ora con eliminazione da Cloudinary)
 app.delete('/posts/:id', async (req, res) => {
   try {
     const postId = req.params.id;
@@ -401,11 +496,14 @@ app.delete('/posts/:id', async (req, res) => {
       return res.status(403).json({ error: 'Non sei autorizzato a eliminare questo post' });
     }
 
-    // Elimina il file immagine se esiste
-    if (post.imageUrl) {
-      const imagePath = path.join(__dirname, post.imageUrl.replace(/^\/uploads/, 'uploads'));
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
+    // Elimina l'immagine da Cloudinary se esiste
+    if (post.cloudinaryId) {
+      try {
+        await cloudinary.uploader.destroy(post.cloudinaryId);
+        console.log('Immagine eliminata da Cloudinary:', post.cloudinaryId);
+      } catch (cloudinaryError) {
+        console.error('Errore nell\'eliminazione da Cloudinary:', cloudinaryError);
+        // Continuiamo comunque con l'eliminazione del post dal database
       }
     }
 
@@ -419,8 +517,7 @@ app.delete('/posts/:id', async (req, res) => {
   }
 });
 
-// API per contrassegnare un animale come trovato e sovrascriverlo
-// Migliore funzione mark-found con gestione errori dettagliata
+// API per contrassegnare un animale come trovato (ora con Cloudinary)
 app.put('/posts/:id/mark-found', async (req, res) => {
   try {
     const postId = req.params.id;
@@ -441,111 +538,43 @@ app.put('/posts/:id/mark-found', async (req, res) => {
     // Procedi solo se l'animale non è già segnato come trovato
     if (post.animalStatus !== 'trovato') {
       try {
-        // Estrai il nome del file dalla URL
-        const fileNameWithPath = post.imageUrl.replace(/^\/uploads\//, '');
-        const imagePath = path.join(__dirname, 'uploads', fileNameWithPath);
-        const stickerPath = path.join(__dirname, 'public', 'trovato-stamp.png');
+        if (post.cloudinaryId) {
+          // Applica lo stamp usando Cloudinary
+          const result = await applyFoundStampCloudinary(post.cloudinaryId);
+          
+          // Aggiorna il post con la nuova immagine
+          post.imageUrl = result.url;
+          post.cloudinaryId = result.publicId;
+          post.animalStatus = 'trovato';
+          await post.save();
 
-        console.log('Verifica percorsi file:');
-        console.log('- Percorso immagine:', imagePath);
-        console.log('- Percorso sticker:', stickerPath);
+          console.log('Post aggiornato con successo con nuova immagine da Cloudinary:', post.imageUrl);
 
-        // Verifica che le directory esistano
-        if (!fs.existsSync(path.join(__dirname, 'uploads'))) {
-          console.error('Directory uploads non trovata');
-          return res.status(500).json({ error: 'Directory uploads non trovata' });
+          res.json({ 
+            success: true, 
+            message: 'Animale contrassegnato come trovato', 
+            newImageUrl: post.imageUrl 
+          });
+        } else {
+          // Fallback per immagini senza cloudinaryId (backward compatibility)
+          post.animalStatus = 'trovato';
+          await post.save();
+          
+          res.json({ 
+            success: true, 
+            message: 'Animale contrassegnato come trovato (senza modifica immagine)' 
+          });
         }
-
-        if (!fs.existsSync(path.join(__dirname, 'public'))) {
-          console.error('Directory public non trovata');
-          return res.status(500).json({ error: 'Directory public non trovata' });
-        }
-
-        // Verifica che i file esistano
-        if (!fs.existsSync(imagePath)) {
-          console.error('File immagine non trovato:', imagePath);
-          return res.status(500).json({ error: `Immagine originale non trovata: ${fileNameWithPath}` });
-        }
-
-        if (!fs.existsSync(stickerPath)) {
-          console.error('File sticker non trovato:', stickerPath);
-          return res.status(500).json({ error: 'Sticker TROVATO non trovato' });
-        }
-
-        // Verifica che l'immagine possa essere letta
-        try {
-          await sharp(imagePath).metadata();
-        } catch (readError) {
-          console.error('Impossibile leggere l\'immagine:', readError);
-          return res.status(500).json({ error: 'Impossibile leggere l\'immagine originale' });
-        }
-
-        // Verifica che lo sticker possa essere letto
-        try {
-          await sharp(stickerPath).metadata();
-        } catch (readError) {
-          console.error('Impossibile leggere lo sticker:', readError);
-          return res.status(500).json({ error: 'Impossibile leggere lo sticker TROVATO' });
-        }
-
-        // Genera un nuovo nome file
-        const timestamp = Date.now();
-        const extension = path.extname(fileNameWithPath);
-        const baseName = path.basename(fileNameWithPath, extension);
-        const newFileName = `trovato_${baseName}_${timestamp}${extension}`;
-        const newFilePath = path.join(__dirname, 'uploads', newFileName);
-
-        console.log('Nuovo file:', newFilePath);
-
-        // Ottieni informazioni sull'immagine
-        const imageInfo = await sharp(imagePath).metadata();
-        console.log('Dimensioni immagine:', imageInfo.width, 'x', imageInfo.height);
-
-        // Calcola dimensioni per lo sticker
-        const stickerWidth = Math.round(imageInfo.width * 0.7);
-        const stickerHeight = Math.round(stickerWidth * 0.7);
-        console.log('Dimensioni sticker calcolate:', stickerWidth, 'x', stickerHeight);
-
-        // Crea un buffer per lo sticker ridimensionato
-        const resizedStickerBuffer = await sharp(stickerPath)
-          .resize(stickerWidth, stickerHeight)
-          .toBuffer();
-
-        // Crea l'immagine composita
-        await sharp(imagePath)
-          .composite([{
-            input: resizedStickerBuffer,
-            gravity: 'center',
-            blend: 'over',
-            rotate: -25
-          }])
-          .toFormat('jpeg')
-          .jpeg({ quality: 90 })
-          .toFile(newFilePath);
-
-        // Verifica che il nuovo file sia stato creato
-        if (!fs.existsSync(newFilePath)) {
-          console.error('File output non creato');
-          return res.status(500).json({ error: 'Errore nella creazione dell\'immagine composita' });
-        }
-
-        // Aggiorna il path dell'immagine nel database
-        post.imageUrl = `/uploads/${newFileName}`;
+      } catch (imageError) {
+        console.error('Errore durante la modifica dell\'immagine su Cloudinary:', imageError);
+        // Anche se l'immagine non può essere modificata, aggiorniamo lo status
         post.animalStatus = 'trovato';
         await post.save();
-
-        console.log('Post aggiornato con successo con nuova immagine:', post.imageUrl);
-
+        
         res.json({ 
           success: true, 
-          message: 'Animale contrassegnato come trovato', 
-          newImageUrl: post.imageUrl 
-        });
-      } catch (imageError) {
-        console.error('Errore durante la modifica dell\'immagine:', imageError);
-        console.error(imageError.stack);
-        return res.status(500).json({ 
-          error: `Errore durante la modifica dell'immagine: ${imageError.message}` 
+          message: 'Animale contrassegnato come trovato (errore nella modifica immagine)',
+          warning: 'Impossibile applicare lo stamp all\'immagine'
         });
       }
     } else {
@@ -585,7 +614,7 @@ app.get('/cropper.css', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'cropper.css'));
 });
 
-// API per registrare un nuovo animale domestico
+// API per registrare un nuovo animale domestico (ora con Cloudinary)
 app.post('/pets', async (req, res) => {
   try {
     const { 
@@ -612,25 +641,8 @@ app.post('/pets', async (req, res) => {
       return res.status(400).json({ error: 'Nessuna immagine fornita' });
     }
 
-    // Estrai i dati dell'immagine
-    const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
-    const imageBuffer = Buffer.from(base64Data, 'base64');
-
-    // Genera un nome file univoco
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = '.jpg'; // Forziamo l'estensione a jpg
-    const fileName = `pet_${uniqueSuffix}${ext}`;
-    const filePath = path.join(__dirname, 'uploads', fileName);
-
-    // Assicurati che la directory uploads esista
-    if (!fs.existsSync(path.join(__dirname, 'uploads'))) {
-      fs.mkdirSync(path.join(__dirname, 'uploads'));
-    }
-
-    // Salva l'immagine sul disco
-    fs.writeFileSync(filePath, imageBuffer);
-
-    const imageUrl = `/uploads/${fileName}`;
+    // Carica l'immagine su Cloudinary
+    const uploadResult = await uploadBase64ToCloudinary(image, 'petfinder/pets');
 
     // Crea il record del pet nel database
     const pet = await Pet.create({
@@ -642,7 +654,8 @@ app.post('/pets', async (req, res) => {
       petColor,
       petMicrochip,
       petNotes,
-      imageUrl,
+      imageUrl: uploadResult.url,
+      cloudinaryId: uploadResult.publicId,
       UserId: userId
     });
 
@@ -708,7 +721,7 @@ app.get('/pets/details/:id', async (req, res) => {
   }
 });
 
-// API per eliminare un animale
+// API per eliminare un animale (ora con eliminazione da Cloudinary)
 app.delete('/pets/:id', async (req, res) => {
   try {
     const petId = req.params.id;
@@ -726,11 +739,14 @@ app.delete('/pets/:id', async (req, res) => {
       return res.status(403).json({ error: 'Non sei autorizzato a eliminare questo animale' });
     }
 
-    // Elimina il file immagine se esiste
-    if (pet.imageUrl) {
-      const imagePath = path.join(__dirname, pet.imageUrl.replace(/^\/uploads/, 'uploads'));
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
+    // Elimina l'immagine da Cloudinary se esiste
+    if (pet.cloudinaryId) {
+      try {
+        await cloudinary.uploader.destroy(pet.cloudinaryId);
+        console.log('Immagine pet eliminata da Cloudinary:', pet.cloudinaryId);
+      } catch (cloudinaryError) {
+        console.error('Errore nell\'eliminazione da Cloudinary:', cloudinaryError);
+        // Continuiamo comunque con l'eliminazione del pet dal database
       }
     }
 
@@ -744,11 +760,14 @@ app.delete('/pets/:id', async (req, res) => {
   }
 });
 
-// Avvio del server con test della connessione al database
+// Avvio del server con test delle connessioni
 async function startServer() {
   try {
     // Testa la connessione al database
     await testDatabaseConnection();
+    
+    // Testa la connessione a Cloudinary
+    await testCloudinaryConnection();
     
     // Sincronizza i modelli con il database
     await sequelize.sync();
@@ -760,6 +779,7 @@ async function startServer() {
       console.log(`📱 Feed disponibile su http://localhost:${PORT}/feed.html`);
       console.log(`📝 Crea post disponibile su http://localhost:${PORT}/create.html`);
       console.log(`🗄️ Database: ${process.env.DATABASE_URL ? 'PostgreSQL (Render)' : 'Fallback locale'}`);
+      console.log(`☁️ Storage immagini: Cloudinary (${process.env.CLOUDINARY_CLOUD_NAME || 'non configurato'})`);
     });
   } catch (error) {
     console.error('❌ Errore durante l\'avvio del server:', error);
