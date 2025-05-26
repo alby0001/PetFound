@@ -787,5 +787,30 @@ async function startServer() {
   }
 }
 
+
+
+
+const cloudinary = require('cloudinary').v2;
+
+cloudinary.config({ 
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
+  api_key: process.env.CLOUDINARY_API_KEY, 
+  api_secret: process.env.CLOUDINARY_API_SECRET 
+});
+
+// Nel tuo file server.js o index.js (dove configuri Express)
+app.get('/test-cloudinary', async (req, res) => {
+  try {
+    const result = await cloudinary.api.ping();
+    console.log('✅ Connessione a Cloudinary stabilita con successo:', result);
+    res.send('✅ Connessione a Cloudinary OK');
+  } catch (error) {
+    console.error('❌ Errore nella connessione a Cloudinary:', error);
+    res.status(500).send('❌ Errore nella connessione a Cloudinary');
+  }
+});
+
+
+
 // Avvia il server
 startServer();
