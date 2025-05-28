@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PetFound - Test Connessioni</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .test-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .test-status {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .status-pending {
+            background: #ffeaa7;
+            color: #d63031;
+        }
+
+        .status-testing {
+            background: #74b9ff;
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-success {
+            background: #00b894;
+            color: white;
+        }
+
+        .status-error {
+            background: #e17055;
+            color: white;
+        }
+
+        .test-details {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            border: 1px solid #e9ecef;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .success-text {
+            color: #00b894;
+        }
+
+        .error-text {
+            color: #e17055;
+        }
+
+        .warning-text {
+            color: #fdcb6e;
+        }
+
+        .info-text {
+            color: #74b9ff;
+        }
+
+        .control-panel {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .summary {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .summary h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .summary-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e9ecef;
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .test-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 PetFound Connection Tester</h1>
+            <p>Verifica lo stato di tutti i servizi del sistema</p>
+        </div>
+
+        <div class="content">
+            <div class="control-panel">
+                <button class="btn" onclick="runAllTests()" id="testBtn">
+                    🚀 Avvia Test Completo
+                </button>
+                <button class="btn" onclick="clearResults()" id="clearBtn">
+                    🧹 Pulisci Risultati
+                </button>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <div class="test-section">
+                <div class="test-header">
+                    <div class="test-title">🌐 Connessione Web App</div>
+                    <div class="test-status status-pending" id="webapp-status">In Attesa</div>
+                </div>
+                <div class="test-details" id="webapp-details" style="display: none;"></div>
+            </div>
+
+            <div class="test-section">
+                <div class="test-header">
+                    <div class="test-title">📊 API Database</div>
+                    <div class="test-status status-pending" id="database-status">In Attesa</div>
+                </div>
+                <div class="test-details" id="database-details" style="display: none;"></div>
+            </div>
+
+            <div class="test-section">
+                <div class="test-header">
+                    <div class="test-title">☁️ Cloudinary Storage</div>
+                    <div class="test-status status-pending" id="cloudinary-status">In Attesa</div>
+                </div>
+                <div class="test-details" id="cloudinary-details" style="display: none;"></div>
+            </div>
+
+            <div class="test-section">
+                <div class="test-header">
+                    <div class="test-title">🔄 Test Completo API</div>
+                    <div class="test-status status-pending" id="fullapi-status">In Attesa</div>
+                </div>
+                <div class="test-details" id="fullapi-details" style="display: none;"></div>
+            </div>
+
+            <div class="summary" id="summary" style="display: none;">
+                <h3>📋 Riepilogo Risultati</h3>
+                <div class="summary-stats">
+                    <div class="stat">
+                        <div class="stat-number success-text" id="passedCount">0</div>
+                        <div class="stat-label">Test Superati</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number error-text" id="failedCount">0</div>
+                        <div class="stat-label">Test Falliti</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number info-text" id="totalCount">4</div>
+                        <div class="stat-label">Test Totali</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tests = [
+            { id: 'webapp', name: 'Web App', endpoint: '/' },
+            { id: 'database', name: 'Database', endpoint: '/posts' },
+            { id: 'cloudinary', name: 'Cloudinary', endpoint: '/posts' },
+            { id: 'fullapi', name: 'Full API', endpoint: '/posts' }
+        ];
+
+        let currentTestIndex = 0;
+        let results = {};
+
+        function updateStatus(testId, status, details = '') {
+            const statusElement = document.getElementById(`${testId}-status`);
+            const detailsElement = document.getElementById(`${testId}-details`);
+            
+            statusElement.className = `test-status status-${status}`;
+            
+            switch(status) {
+                case 'testing':
+                    statusElement.textContent = 'Testing...';
+                    break;
+                case 'success':
+                    statusElement.textContent = '✅ Successo';
+                    break;
+                case 'error':
+                    statusElement.textContent = '❌ Errore';
+                    break;
+                default:
+                    statusElement.textContent = 'In Attesa';
+            }
+            
+            if (details) {
+                detailsElement.style.display = 'block';
+                detailsElement.innerHTML = details;
+            }
+        }
+
+        function updateProgress(percentage) {
+            document.getElementById('progressFill').style.width = percentage + '%';
+        }
+
+        function addDetail(testId, message, type = 'info') {
+            const detailsElement = document.getElementById(`${testId}-details`);
+            const timestamp = new Date().toLocaleTimeString();
+            const className = `${type}-text`;
+            
+            detailsElement.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            detailsElement.scrollTop = detailsElement.scrollHeight;
+        }
+
+        async function testWebApp() {
+            updateStatus('webapp', 'testing');
+            addDetail('webapp', 'Testando connessione alla homepage...', 'info');
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(window.location.origin, {
+                    method: 'GET',
+                    headers: {
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+                const endTime = Date.now();
+                
+                if (response.ok) {
+                    addDetail('webapp', `✅ Homepage raggiungibile (${response.status})`, 'success');
+                    addDetail('webapp', `⏱️ Tempo di risposta: ${endTime - startTime}ms`, 'info');
+                    updateStatus('webapp', 'success');
+                    return true;
+                } else {
+                    addDetail('webapp', `❌ Errore HTTP: ${response.status}`, 'error');
+                    updateStatus('webapp', 'error');
+                    return false;
+                }
+            } catch (error) {
+                addDetail('webapp', `❌ Errore di connessione: ${error.message}`, 'error');
+                updateStatus('webapp', 'error');
+                return false;
+            }
+        }
+
+        async function testDatabase() {
+            updateStatus('database', 'testing');
+            addDetail('database', 'Testando connessione API posts...', 'info');
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(window.location.origin + '/posts', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+                const endTime = Date.now();
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addDetail('database', `✅ API Posts funzionante (${response.status})`, 'success');
+                    addDetail('database', `📊 Posts trovati: ${data.length}`, 'success');
+                    addDetail('database', `⏱️ Tempo di risposta: ${endTime - startTime}ms`, 'info');
+                    
+                    if (data.length > 0) {
+                        addDetail('database', `📝 Ultimo post: ${new Date(data[0].createdAt).toLocaleString()}`, 'info');
+                    }
+                    
+                    updateStatus('database', 'success');
+                    return true;
+                } else {
+                    const errorText = await response.text();
+                    addDetail('database', `❌ Errore HTTP: ${response.status}`, 'error');
+                    addDetail('database', `📄 Dettagli: ${errorText.substring(0, 200)}`, 'error');
+                    updateStatus('database', 'error');
+                    return false;
+                }
+            } catch (error) {
+                addDetail('database', `❌ Errore di connessione: ${error.message}`, 'error');
+                if (error.message.includes('timeout')) {
+                    addDetail('database', '⚠️ Possibile problema di timeout del database', 'warning');
+                }
+                updateStatus('database', 'error');
+                return false;
+            }
+        }
+
+        async function testCloudinary() {
+            updateStatus('cloudinary', 'testing');
+            addDetail('cloudinary', 'Testando presenza di immagini Cloudinary nei posts...', 'info');
+            
+            try {
+                const response = await fetch(window.location.origin + '/posts');
+                
+                if (response.ok) {
+                    const posts = await response.json();
+                    const cloudinaryPosts = posts.filter(post => 
+                        post.imageUrl && post.imageUrl.includes('cloudinary.com')
+                    );
+                    
+                    addDetail('cloudinary', `📊 Posts totali: ${posts.length}`, 'info');
+                    addDetail('cloudinary', `☁️ Posts con immagini Cloudinary: ${cloudinaryPosts.length}`, 'success');
+                    
+                    if (cloudinaryPosts.length > 0) {
+                        // Test caricamento di un'immagine Cloudinary
+                        const testImageUrl = cloudinaryPosts[0].imageUrl;
+                        addDetail('cloudinary', `🖼️ Testando caricamento immagine...`, 'info');
+                        
+                        const imageStartTime = Date.now();
+                        const imageResponse = await fetch(testImageUrl, { method: 'HEAD' });
+                        const imageEndTime = Date.now();
+                        
+                        if (imageResponse.ok) {
+                            addDetail('cloudinary', `✅ Immagine Cloudinary caricata correttamente`, 'success');
+                            addDetail('cloudinary', `⏱️ Tempo caricamento immagine: ${imageEndTime - imageStartTime}ms`, 'info');
+                        } else {
+                            addDetail('cloudinary', `⚠️ Problema nel caricamento immagine (${imageResponse.status})`, 'warning');
+                        }
+                    }
+                    
+                    updateStatus('cloudinary', 'success');
+                    return true;
+                } else {
+                    addDetail('cloudinary', `❌ Impossibile verificare le immagini`, 'error');
+                    updateStatus('cloudinary', 'error');
+                    return false;
+                }
+            } catch (error) {
+                addDetail('cloudinary', `❌ Errore nel test Cloudinary: ${error.message}`, 'error');
+                updateStatus('cloudinary', 'error');
+                return false;
+            }
+        }
+
+        async function testFullAPI() {
+            updateStatus('fullapi', 'testing');
+            addDetail('fullapi', 'Eseguendo test completo delle API...', 'info');
+            
+            const endpoints = [
+                { url: '/posts', name: 'Posts' },
+                { url: '/register', name: 'Register (POST)', method: 'POST' },
+                { url: '/login', name: 'Login (POST)', method: 'POST' }
+            ];
+            
+            let successCount = 0;
+            
+            for (const endpoint of endpoints) {
+                try {
+                    addDetail('fullapi', `🔍 Testando ${endpoint.name}...`, 'info');
+                    
+                    let response;
+                    if (endpoint.method === 'POST') {
+                        // Per i POST, testiamo solo se l'endpoint risponde (anche con errore di validazione)
+                        response = await fetch(window.location.origin + endpoint.url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({})
+                        });
+                    } else {
+                        response = await fetch(window.location.origin + endpoint.url);
+                    }
+                    
+                    if (response.ok || (endpoint.method === 'POST' && response.status === 400)) {
+                        addDetail('fullapi', `✅ ${endpoint.name}: Risponde correttamente`, 'success');
+                        successCount++;
+                    } else {
+                        addDetail('fullapi', `⚠️ ${endpoint.name}: Status ${response.status}`, 'warning');
+                    }
+                } catch (error) {
+                    addDetail('fullapi', `❌ ${endpoint.name}: ${error.message}`, 'error');
+                }
+            }
+            
+            addDetail('fullapi', `📊 Risultato: ${successCount}/${endpoints.length} endpoint funzionanti`, 'info');
+            
+            if (successCount >= endpoints.length - 1) { // Tollerano un errore
+                updateStatus('fullapi', 'success');
+                return true;
+            } else {
+                updateStatus('fullapi', 'error');
+                return false;
+            }
+        }
+
+        async function runAllTests() {
+            const testBtn = document.getElementById('testBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            
+            testBtn.disabled = true;
+            clearBtn.disabled = true;
+            
+            testBtn.textContent = '🔄 Testing...';
+            
+            // Reset progress
+            updateProgress(0);
+            document.getElementById('summary').style.display = 'none';
+            
+            const testFunctions = [testWebApp, testDatabase, testCloudinary, testFullAPI];
+            const testIds = ['webapp', 'database', 'cloudinary', 'fullapi'];
+            
+            results = {};
+            
+            for (let i = 0; i < testFunctions.length; i++) {
+                updateProgress((i / testFunctions.length) * 100);
+                
+                const result = await testFunctions[i]();
+                results[testIds[i]] = result;
+                
+                // Piccola pausa tra i test
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            
+            updateProgress(100);
+            
+            // Mostra riepilogo
+            const passed = Object.values(results).filter(r => r).length;
+            const failed = Object.values(results).filter(r => !r).length;
+            
+            document.getElementById('passedCount').textContent = passed;
+            document.getElementById('failedCount').textContent = failed;
+            document.getElementById('summary').style.display = 'block';
+            
+            testBtn.disabled = false;
+            clearBtn.disabled = false;
+            testBtn.textContent = '🚀 Avvia Test Completo';
+        }
+
+        function clearResults() {
+            const testIds = ['webapp', 'database', 'cloudinary', 'fullapi'];
+            
+            testIds.forEach(id => {
+                updateStatus(id, 'pending');
+                const detailsElement = document.getElementById(`${id}-details`);
+                detailsElement.style.display = 'none';
+                detailsElement.innerHTML = '';
+            });
+            
+            updateProgress(0);
+            document.getElementById('summary').style.display = 'none';
+            results = {};
+        }
+
+        // Auto-run test on page load (optional)
+        // window.addEventListener('load', () => {
+        //     setTimeout(runAllTests, 1000);
+        // });
+    </script>
+</body>
+</html>
