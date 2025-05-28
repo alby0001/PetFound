@@ -795,9 +795,26 @@ async function startServer() {
     // Testa la connessione a Cloudinary
     await testCloudinaryConnection();
     
-    // Sincronizza i modelli con il database
-    await sequelize.sync();
+    // FORZA la sincronizzazione delle tabelle per aggiungere le colonne mancanti
+    console.log('🔄 Sincronizzazione forzata del database...');
+    await sequelize.sync({ 
+      alter: true, // Modifica le tabelle esistenti per aggiungere le nuove colonne
+      logging: console.log // Mostra cosa sta facendo
+    });
     console.log('✅ Database sincronizzato con successo');
+    
+    // Verifica che le colonne siano state aggiunte
+    const queryInterface = sequelize.getQueryInterface();
+    const postColumns = await queryInterface.describeTable('Posts');
+    console.log('Colonne della tabella Posts:', Object.keys(postColumns));
+    
+    const petColumns = await queryInterface.describeTable('Pets');
+    console.log('Colonne della tabella Pets:', Object.keys(petColumns));
+    
+    // Test query per verificare che tutto funzioni
+    const userCount = await User.count();
+    const postCount = await Post.count();
+    console.log(`Database: ${userCount} utenti, ${postCount} post`);
     
     // Avvia il server
     app.listen(PORT, () => {
