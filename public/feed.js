@@ -167,13 +167,22 @@ async function searchLocation(query) {
 // Funzione loadPosts per visualizzare informazioni sugli animali
 async function loadPosts() {
   try {
+    console.log('Tentativo di caricamento post...');
     const res = await fetch('/posts');
+    
+    console.log('Risposta ricevuta:', res.status, res.statusText);
 
     if (!res.ok) {
-      throw new Error(`Errore nel caricamento dei post: ${res.status}`);
+      // Prova a leggere il corpo della risposta per avere più dettagli
+      const errorText = await res.text();
+      console.error('Errore dal server:', errorText);
+      throw new Error(`Errore nel caricamento dei post: ${res.status} - ${errorText}`);
     }
 
-    allPosts = await res.json();
+    const posts = await res.json();
+    console.log('Post caricati:', posts.length, posts);
+    
+    allPosts = posts;
 
     // Pulisci la mappa dai marker esistenti
     map.eachLayer((layer) => {
@@ -185,8 +194,12 @@ async function loadPosts() {
     // Avvia la geolocalizzazione automaticamente
     getUserLocation();
   } catch (error) {
-    console.error("Errore nel caricamento dei post:", error);
-    document.getElementById('feed').innerHTML = '<div class="error-message">Errore nel caricamento dei post. Riprova più tardi.</div>';
+    console.error("Errore dettagliato nel caricamento dei post:", error);
+    document.getElementById('feed').innerHTML = `
+      <div class="error-message">
+        Errore nel caricamento dei post: ${error.message}
+        <br><small>Controlla la console per maggiori dettagli</small>
+      </div>`;
   }
 }
 
