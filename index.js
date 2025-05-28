@@ -614,6 +614,12 @@ app.get('/cropper.css', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'cropper.css'));
 });
 
+
+app.get('/test-connections.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'test-connections.html'));
+});
+
+
 // API per registrare un nuovo animale domestico (ora con Cloudinary)
 app.post('/pets', async (req, res) => {
   try {
