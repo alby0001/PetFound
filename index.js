@@ -433,23 +433,43 @@ app.get('/posts', async (req, res) => {
 });
 
 // API per ottenere un singolo post
-app.get('/posts/:id', async (req, res) => {
+
+app.get('/posts', async (req, res) => {
   try {
-    const post = await Post.findByPk(req.params.id, {
+    console.log('Richiesta ricevuta per /posts');
+    
+    // Test connessione database
+    await sequelize.authenticate();
+    console.log('Connessione database OK');
+    
+    const posts = await Post.findAll({
       include: [{ 
         model: User, 
-        attributes: ['username'] 
-      }]
+        attributes: ['username'],
+        required: false // LEFT JOIN invece di INNER JOIN
+      }],
+      order: [['createdAt', 'DESC']]
     });
 
-    if (!post) {
-      return res.status(404).json({ error: 'Post non trovato' });
-    }
+    console.log(`Trovati ${posts.length} post`);
+    
+    // Trasforma i dati per essere sicuri che siano serializzabili
+    const serializedPosts = posts.map(post => {
+      const postData = post.toJSON();
+      return {
+        ...postData,
+        User: postData.User || { username: 'Utente sconosciuto' }
+      };
+    });
 
-    res.json(post);
+    res.json(serializedPosts);
   } catch (error) {
-    console.error('Errore nel recupero del post:', error);
-    res.status(500).json({ error: 'Errore del server durante il recupero del post' });
+    console.error('Errore dettagliato nel recupero dei post:', error);
+    res.status(500).json({ 
+      error: 'Errore del server durante il recupero dei post',
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
