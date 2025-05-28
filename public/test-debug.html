@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Debug PetFinder</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background: #f5f5f5;
+        }
+        .test-section { 
+            background: white; 
+            margin: 20px 0; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .result { 
+            margin: 10px 0; 
+            padding: 10px; 
+            border-radius: 4px; 
+            font-family: monospace;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .loading { opacity: 0.6; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 4px; overflow-x: auto; }
+        .image-preview { max-width: 200px; max-height: 200px; margin: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test Debug PetFinder</h1>
+    
+    <div class="test-section">
+        <h2>1. Test Connessione Server</h2>
+        <button onclick="testServerConnection()">Testa Connessione</button>
+        <div id="serverResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test API Posts</h2>
+        <button onclick="testPostsAPI()">Testa API Posts</button>
+        <button onclick="testSpecificPost()">Testa Post Specifico</button>
+        <div id="postsResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test Immagini</h2>
+        <button onclick="testImages()">Verifica Immagini</button>
+        <div id="imagesResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test Creazione Post</h2>
+        <input type="file" id="testImage" accept="image/*">
+        <button onclick="testCreatePost()">Crea Post di Test</button>
+        <div id="createResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Simulazione Feed</h2>
+        <button onclick="simulateFeed()">Simula Caricamento Feed</button>
+        <div id="feedResult"></div>
+        <div id="feedPreview"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>6. Log Console</h2>
+        <button onclick="clearLog()">Pulisci Log</button>
+        <div id="consoleLog"></div>
+    </div>
+
+    <script>
+        // Funzione helper per log
+        function logMessage(message, type = 'info') {
+            const logDiv = document.getElementById('consoleLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `result ${type}`;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('consoleLog').innerHTML = '';
+        }
+
+        // Test 1: Connessione Server
+        async function testServerConnection() {
+            const resultDiv = document.getElementById('serverResult');
+            resultDiv.innerHTML = '<div class="result info">Testando connessione...</div>';
+            
+            try {
+                const response = await fetch('/test-connection');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                let html = '<div class="result success">✅ Server raggiungibile</div>';
+                
+                Object.entries(data).forEach(([key, value]) => {
+                    const isError = typeof value === 'string' && value.includes('ERRORE');
+                    const cssClass = isError ? 'error' : 'success';
+                    html += `<div class="result ${cssClass}"><strong>${key}:</strong> ${JSON.stringify(value, null, 2)}</div>`;
+                });
+                
+                resultDiv.innerHTML = html;
+                logMessage('Test connessione completato', 'success');
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Errore: ${error.message}</div>`;
+                logMessage(`Errore connessione: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 2: API Posts
+        async function testPostsAPI() {
+            const resultDiv = document.getElementById('postsResult');
+            resultDiv.innerHTML = '<div class="result info">Testando API posts...</div>';
+            
+            try {
+                const response = await fetch('/posts');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const posts = await response.json();
+                
+                let html = `<div class="result success">✅ API Posts OK - ${posts.length} posts trovati</div>`;
+                
+                if (posts.length > 0) {
+                    html += '<pre>' + JSON.stringify(posts.slice(0, 2), null, 2) + '</pre>';
+                } else {
+                    html += '<div class="result info">ℹ️ Nessun post presente nel database</div>';
+                }
+                
+                resultDiv.innerHTML = html;
+                logMessage(`API Posts: ${posts.length} posts trovati`, 'success');
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Errore API Posts: ${error.message}</div>`;
+                logMessage(`Errore API Posts: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 3: Verifica Immagini
+        async function testImages() {
+            const resultDiv = document.getElementById('imagesResult');
+            resultDiv.innerHTML = '<div class="result info">Verificando immagini...</div>';
+            
+            try {
+                const response = await fetch('/check-images');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                let html = `<div class="result success">✅ Verifica immagini completata</div>`;
+                html += `<div class="result info">📊 Posts totali: ${data.totalPosts}</div>`;
+                html += `<div class="result info">🖼️ URL validi: ${data.summary.validUrls}</div>`;
+                html += `<div class="result info">✅ immagini accessibili: ${data.summary.accessibleImages}</div>`;
+                
+                // Mostra dettagli delle prime 3 immagini
+                if (data.images.length > 0) {
+                    html += '<h4>Prime immagini:</h4>';
+                    data.images.slice(0, 3).forEach((img, index) => {
+                        const status = img.isAccessible ? '✅' : '❌';
+                        html += `<div class="result ${img.isAccessible ? 'success' : 'error'}">
+                            ${status} Post ${img.postId}: ${img.imageUrl ? img.imageUrl.substring(0, 80) + '...' : 'No URL'}
+                        </div>`;
+                        
+                        // Prova a mostrare l'immagine se accessibile
+                        if (img.isAccessible && img.imageUrl) {
+                            html += `<img src="${img.imageUrl}" class="image-preview" alt="Post ${img.postId}" onerror="this.style.display='none'">`;
+                        }
+                    });
+                }
+                
+                resultDiv.innerHTML = html;
+                logMessage(`Verifica immagini: ${data.summary.accessibleImages}/${data.totalPosts} accessibili`, 'success');
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Errore verifica immagini: ${error.message}</div>`;
+                logMessage(`Errore verifica immagini: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 4: Creazione Post
+        async function testCreatePost() {
+            const resultDiv = document.getElementById('createResult');
+            const fileInput = document.getElementById('testImage');
+            
+            if (!fileInput.files.length) {
+                resultDiv.innerHTML = '<div class="result error">❌ Seleziona un\'immagine per il test</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<div class="result info">Creando post di test...</div>';
+            
+            try {
+                const formData = new FormData();
+                formData.append('image', fileInput.files[0]);
+                formData.append('userId', '1'); // Assumendo che esista un utente con ID 1
+                formData.append('description', 'Post di test creato automaticamente');
+                formData.append('locationName', 'Test Location');
+                formData.append('animalStatus', 'smarrito');
+                formData.append('animalType', 'cane');
+                formData.append('contactInfo', 'test@example.com');
+                
+                const response = await fetch('/posts', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`HTTP ${response.status}: ${errorData.error || response.statusText}`);
+                }
+                
+                const postData = await response.json();
+                
+                let html = '<div class="result success">✅ Post creato con successo!</div>';
+                html += '<pre>' + JSON.stringify(postData, null, 2) + '</pre>';
+                
+                if (postData.imageUrl) {
+                    html += `<img src="${postData.imageUrl}" class="image-preview" alt="Post creato">`;
+                }
+                
+                resultDiv.innerHTML = html;
+                logMessage(`Post creato con successo: ID ${postData.id}`, 'success');
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Errore creazione post: ${error.message}</div>`;
+                logMessage(`Errore creazione post: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 5: Simulazione Feed
+        async function simulateFeed() {
+            const resultDiv = document.getElementById('feedResult');
+            const previewDiv = document.getElementById('feedPreview');
+            
+            resultDiv.innerHTML = '<div class="result info">Simulando caricamento feed...</div>';
+            previewDiv.innerHTML = '';
+            
+            try {
+                // Simula il comportamento del feed
+                const response = await fetch('/posts');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const posts = await response.json();
+                
+                if (posts.length === 0) {
+                    resultDiv.innerHTML = '<div class="result info">ℹ️ Nessun post da mostrare nel feed</div>';
+                    return;
+                }
+                
+                let html = `<div class="result success">✅ Feed caricato: ${posts.length} posts</div>`;
+                resultDiv.innerHTML = html;
+                
+                // Crea anteprima feed
+                let feedHtml = '<h4>Anteprima Feed:</h4>';
+                posts.slice(0, 5).forEach((post, index) => {
+                    feedHtml += `
+                        <div style="border: 1px solid #ddd; margin: 10px 0; padding: 15px; border-radius: 8px; background: white;">
+                            <h5>Post #${post.id} - ${post.User?.username || 'Utente sconosciuto'}</h5>
+                            <p><strong>Stato:</strong> ${post.animalStatus}</p>
+                            <p><strong>Tipo:</strong> ${post.animalType || 'Non specificato'}</p>
+                            <p><strong>Descrizione:</strong> ${post.description?.substring(0, 100) || 'Nessuna descrizione'}...</p>
+                            <p><strong>Luogo:</strong> ${post.locationName || 'Non specificato'}</p>
+                            <p><strong>Data:</strong> ${new Date(post.createdAt).toLocaleString()}</p>
+                            ${post.imageUrl ? `<img src="${post.imageUrl}" class="image-preview" style="max-width: 150px;" alt="Immagine post">` : '<p>❌ Nessuna immagine</p>'}
+                        </div>
+                    `;
+                });
+                
+                previewDiv.innerHTML = feedHtml;
+                logMessage(`Feed simulato con successo: ${posts.length} posts`, 'success');
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Errore simulazione feed: ${error.message}</div>`;
+                logMessage(`Errore simulazione feed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test specifico per un post
+        async function testSpecificPost() {
+            const postId = prompt('Inserisci l\'ID del post da testare (lascia vuoto per il primo):');
+            
+            if (postId === null) return;
+            
+            try {
+                let url = '/posts';
+                if (postId && postId.trim()) {
+                    url = `/posts/${postId.trim()}`;
+                }
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (Array.isArray(data) && data.length > 0) {
+                    // Se è un array, prendi il primo
+                    testSinglePost(data[0]);
+                } else if (data.id) {
+                    // Se è un singolo post
+                    testSinglePost(data);
+                } else {
+                    logMessage('Nessun post trovato', 'error');
+                }
+            } catch (error) {
+                logMessage(`Errore test post specifico: ${error.message}`, 'error');
+            }
+        }
+
+        function testSinglePost(post) {
+            const resultDiv = document.getElementById('postsResult');
+            
+            let html = `<div class="result success">✅ Post ${post.id} trovato</div>`;
+            html += '<h4>Dettagli Post:</h4>';
+            html += '<pre>' + JSON.stringify(post, null, 2) + '</pre>';
+            
+            if (post.imageUrl) {
+                html += `<h4>Test Immagine:</h4>`;
+                html += `<p>URL: ${post.imageUrl}</p>`;
+                html += `<img src="${post.imageUrl}" class="image-preview" alt="Test immagine" onload="logMessage('✅ Immagine caricata correttamente', 'success')" onerror="logMessage('❌ Errore caricamento immagine', 'error')">`;
+            }
+            
+            resultDiv.innerHTML = html;
+            logMessage(`Test post ${post.id} completato`, 'success');
+        }
+
+        // Auto-start del primo test
+        window.onload = function() {
+            logMessage('Pagina di test caricata', 'info');
+            testServerConnection();
+        };
+    </script>
+</body>
+</html>
