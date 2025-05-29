@@ -295,10 +295,6 @@ app.get('/report-lost-form.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'report-lost-form.js'));
 });
 
-app.get('/admin.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
 // API per la registrazione
 app.post('/register', async (req, res) => {
   const { username, password } = req.body;
@@ -789,6 +785,150 @@ app.delete('/pets/:id', async (req, res) => {
     res.status(500).json({ error: 'Errore del server durante l\'eliminazione dell\'animale' });
   }
 });
+
+
+// AGGIUNGI QUESTI ENDPOINT AL TUO index.js (prima di startServer())
+
+// Servire la pagina admin
+app.get('/admin.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+// API Admin - Statistiche
+app.get('/admin/stats', async (req, res) => {
+  try {
+    // Conteggi totali
+    const totalUsers = await User.count();
+    const totalPosts = await Post.count();
+    const totalPets = await Pet.count();
+
+    // Post per status
+    const postsByStatus = await Post.findAll({
+      attributes: [
+        'animalStatus',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      group: ['animalStatus'],
+      raw: true
+    });
+
+    // Animali per tipo
+    const petsByType = await Pet.findAll({
+      attributes: [
+        'petType',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      group: ['petType'],
+      raw: true
+    });
+
+    res.json({
+      totals: {
+        users: totalUsers,
+        posts: totalPosts,
+        pets: totalPets
+      },
+      postsByStatus: postsByStatus,
+      petsByType: petsByType
+    });
+  } catch (error) {
+    console.error('Errore statistiche admin:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// API Admin - Lista utenti
+app.get('/admin/users', async (req, res) => {
+  try {
+    const users = await User.findAll({
+      attributes: ['id', 'username', 'createdAt', 'updatedAt'],
+      order: [['createdAt', 'DESC']]
+    });
+
+    res.json({
+      count: users.length,
+      users: users
+    });
+  } catch (error) {
+    console.error('Errore utenti admin:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// API Admin - Lista post
+app.get('/admin/posts', async (req, res) => {
+  try {
+    const posts = await Post.findAll({
+      include: [{ 
+        model: User, 
+        attributes: ['username'],
+        required: false
+      }],
+      order: [['createdAt', 'DESC']]
+    });
+
+    res.json({
+      count: posts.length,
+      posts: posts
+    });
+  } catch (error) {
+    console.error('Errore post admin:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// API Admin - Lista animali
+app.get('/admin/pets', async (req, res) => {
+  try {
+    const pets = await Pet.findAll({
+      include: [{ 
+        model: User, 
+        attributes: ['username'],
+        required: false
+      }],
+      order: [['createdAt', 'DESC']]
+    });
+
+    res.json({
+      count: pets.length,
+      pets: pets
+    });
+  } catch (error) {
+    console.error('Errore pets admin:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// API Admin - Query personalizzata
+app.post('/admin/query', async (req, res) => {
+  try {
+    const { query } = req.body;
+
+    if (!query || !query.trim()) {
+      return res.status(400).json({ error: 'Query vuota' });
+    }
+
+    // Sicurezza base: permetti solo SELECT
+    const cleanQuery = query.trim().toUpperCase();
+    if (!cleanQuery.startsWith('SELECT')) {
+      return res.status(400).json({ error: 'Solo query SELECT sono permesse' });
+    }
+
+    // Esegui la query
+    const results = await sequelize.query(query, {
+      type: sequelize.QueryTypes.SELECT
+    });
+
+    res.json({
+      count: results.length,
+      results: results
+    });
+  } catch (error) {
+    console.error('Errore query admin:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 // Avvio del server con test delle connessioni
 async function startServer() {
