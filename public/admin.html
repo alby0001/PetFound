@@ -534,6 +534,105 @@
                     `<div class="error">Errore nell'esecuzione della query: ${error.message}</div>`;
             }
         }
+        async function exportToExcel() {
+            const exportBtn = document.getElementById('export-btn');
+            exportBtn.disabled = true;
+            exportBtn.textContent = '⏳ Esportazione in corso...';
+        
+            try {
+                // Caricamento dati
+                const [statsRes, usersRes, postsRes, petsRes] = await Promise.all([
+                    fetch('/admin/stats'),
+                    fetch('/admin/users'),
+                    fetch('/admin/posts'),
+                    fetch('/admin/pets')
+                ]);
+        
+                const stats = await statsRes.json();
+                const users = (await usersRes.json()).users;
+                const posts = (await postsRes.json()).posts;
+                const pets = (await petsRes.json()).pets;
+        
+                // 📊 Sheet: Statistiche
+                const statsSheet = [
+                    ['Utenti Totali', stats.totals.users],
+                    ['Post Totali', stats.totals.posts],
+                    ['Animali Registrati', stats.totals.pets],
+                    [],
+                    ['Post per Status'],
+                    ['Status', 'Numero Post'],
+                    ...stats.postsByStatus.map(p => [p.animalStatus || 'Non specificato', p.count]),
+                    [],
+                    ['Animali per Tipo'],
+                    ['Tipo', 'Numero'],
+                    ...stats.petsByType.map(p => [p.petType || 'Non specificato', p.count])
+                ];
+        
+                // 👥 Sheet: Utenti
+                const usersSheet = users.map(user => ({
+                    ID: user.id,
+                    Username: user.username,
+                    'Data Registrazione': new Date(user.createdAt).toLocaleString(),
+                    'Ultimo Aggiornamento': new Date(user.updatedAt).toLocaleString()
+                }));
+        
+                // 📝 Sheet: Post
+                const postsSheet = posts.map(post => ({
+                    ID: post.id,
+                    'ID Utente': post.UserId,
+                    Username: post.User?.username || 'N/A',
+                    'Tipo Animale': post.animalType,
+                    Status: post.animalStatus,
+                    Descrizione: post.description,
+                    Posizione: post.locationName,
+                    'URL Immagine': post.imageUrl,
+                    Data: new Date(post.createdAt).toLocaleString()
+                }));
+        
+                // 🐾 Sheet: Animali
+                const petsSheet = pets.map(pet => ({
+                    ID: pet.id,
+                    'ID Utente': pet.UserId,
+                    'Username Proprietario': pet.User?.username || 'N/A',
+                    Nome: pet.petName,
+                    Tipo: pet.petType,
+                    Età: pet.petAge,
+                    Genere: pet.petGender,
+                    Razza: pet.petBreed,
+                    Colore: pet.petColor,
+                    Microchip: pet.petMicrochip,
+                    'URL Immagine': pet.imageUrl,
+                    'Data Registrazione': new Date(pet.createdAt).toLocaleString()
+                }));
+        
+                // 📄 Workbook
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(statsSheet), 'Statistiche');
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(usersSheet), 'Utenti');
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(postsSheet), 'Post');
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(petsSheet), 'Animali');
+        
+                const today = new Date().toISOString().slice(0, 10);
+                const filename = `PetFinder_Database_Export_${today}.xlsx`;
+                XLSX.writeFile(wb, filename);
+        
+                exportBtn.textContent = '✅ Esportazione completata!';
+                setTimeout(() => {
+                    exportBtn.textContent = '📊 Esporta Excel';
+                    exportBtn.disabled = false;
+                }, 5000);
+            } catch (error) {
+                console.error('Errore esportazione:', error);
+                exportBtn.textContent = '❌ Errore esportazione';
+                setTimeout(() => {
+                    exportBtn.textContent = '📊 Esporta Excel';
+                    exportBtn.disabled = false;
+                }, 5000);
+            }
+        }
+
+
+
         
         // Carica le statistiche iniziali quando la pagina si carica
         document.addEventListener('DOMContentLoaded', function() {
