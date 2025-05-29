@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Database - PetFinder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        .nav-btn:hover {
+            background: #5a6fd8;
+        }
+        
+        .nav-btn.active {
+            background: #4CAF50;
+        }
+        
+        .content {
+            display: none;
+        }
+        
+        .content.active {
+            display: block;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .data-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .data-table tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .error {
+            background: #ffe6e6;
+            border: 1px solid #ff9999;
+            color: #cc0000;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        
+        .query-section {
+            margin-top: 30px;
+        }
+        
+        .query-input {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+        }
+        
+        .query-btn {
+            background: #FF6B6B;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .query-btn:hover {
+            background: #ff5252;
+        }
+        
+        .image-preview {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐾 Admin Database - PetFinder</h1>
+        
+        <div class="nav">
+            <button class="nav-btn active" onclick="showSection('stats')">Statistiche</button>
+            <button class="nav-btn" onclick="showSection('users')">Utenti</button>
+            <button class="nav-btn" onclick="showSection('posts')">Post</button>
+            <button class="nav-btn" onclick="showSection('pets')">Animali</button>
+            <button class="nav-btn" onclick="showSection('query')">Query Personalizzata</button>
+        </div>
+        
+        <!-- Sezione Statistiche -->
+        <div id="stats" class="content active">
+            <div id="stats-content" class="loading">Caricamento statistiche...</div>
+        </div>
+        
+        <!-- Sezione Utenti -->
+        <div id="users" class="content">
+            <h2>Utenti Registrati</h2>
+            <div id="users-content" class="loading">Caricamento utenti...</div>
+        </div>
+        
+        <!-- Sezione Post -->
+        <div id="posts" class="content">
+            <h2>Post Pubblicati</h2>
+            <div id="posts-content" class="loading">Caricamento post...</div>
+        </div>
+        
+        <!-- Sezione Animali -->
+        <div id="pets" class="content">
+            <h2>Animali Registrati</h2>
+            <div id="pets-content" class="loading">Caricamento animali...</div>
+        </div>
+        
+        <!-- Sezione Query -->
+        <div id="query" class="content">
+            <h2>Esegui Query Personalizzata</h2>
+            <div class="query-section">
+                <textarea id="queryInput" class="query-input" placeholder="Inserisci query SELECT...&#10;Esempio:&#10;SELECT * FROM &quot;Users&quot; LIMIT 10;&#10;SELECT * FROM &quot;Posts&quot; WHERE &quot;animalStatus&quot; = 'smarrito';"></textarea>
+                <br>
+                <button class="query-btn" onclick="executeQuery()">Esegui Query</button>
+            </div>
+            <div id="query-results"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentSection = 'stats';
+        
+        function showSection(section) {
+            // Nascondi tutte le sezioni
+            document.querySelectorAll('.content').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Rimuovi classe active da tutti i bottoni
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Mostra la sezione selezionata
+            document.getElementById(section).classList.add('active');
+            event.target.classList.add('active');
+            
+            currentSection = section;
+            
+            // Carica i dati se necessario
+            loadSectionData(section);
+        }
+        
+        function loadSectionData(section) {
+            switch(section) {
+                case 'stats':
+                    loadStats();
+                    break;
+                case 'users':
+                    loadUsers();
+                    break;
+                case 'posts':
+                    loadPosts();
+                    break;
+                case 'pets':
+                    loadPets();
+                    break;
+            }
+        }
+        
+        async function loadStats() {
+            try {
+                const response = await fetch('/admin/stats');
+                const data = await response.json();
+                
+                let html = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">${data.totals.users}</div>
+                            <div class="stat-label">Utenti Totali</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${data.totals.posts}</div>
+                            <div class="stat-label">Post Totali</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${data.totals.pets}</div>
+                            <div class="stat-label">Animali Registrati</div>
+                        </div>
+                    </div>
+                    
+                    <h3>Post per Status</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Numero Post</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                data.postsByStatus.forEach(item => {
+                    html += `
+                        <tr>
+                            <td>${item.animalStatus || 'Non specificato'}</td>
+                            <td>${item.count}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                
+                if (data.petsByType.length > 0) {
+                    html += `
+                        <h3>Animali per Tipo</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>Numero</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    data.petsByType.forEach(item => {
+                        html += `
+                            <tr>
+                                <td>${item.petType || 'Non specificato'}</td>
+                                <td>${item.count}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += '</tbody></table>';
+                }
+                
+                document.getElementById('stats-content').innerHTML = html;
+            } catch (error) {
+                document.getElementById('stats-content').innerHTML = 
+                    `<div class="error">Errore nel caricamento delle statistiche: ${error.message}</div>`;
+            }
+        }
+        
+        async function loadUsers() {
+            try {
+                const response = await fetch('/admin/users');
+                const data = await response.json();
+                
+                let html = `
+                    <p>Totale utenti: <strong>${data.count}</strong></p>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Data Registrazione</th>
+                                <th>Ultimo Aggiornamento</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                data.users.forEach(user => {
+                    html += `
+                        <tr>
+                            <td>${user.id}</td>
+                            <td>${user.username}</td>
+                            <td>${new Date(user.createdAt).toLocaleDateString('it-IT')}</td>
+                            <td>${new Date(user.updatedAt).toLocaleDateString('it-IT')}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                
+                document.getElementById('users-content').innerHTML = html;
+            } catch (error) {
+                document.getElementById('users-content').innerHTML = 
+                    `<div class="error">Errore nel caricamento degli utenti: ${error.message}</div>`;
+            }
+        }
+        
+        async function loadPosts() {
+            try {
+                const response = await fetch('/admin/posts');
+                const data = await response.json();
+                
+                let html = `
+                    <p>Totale post: <strong>${data.count}</strong></p>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Immagine</th>
+                                <th>Utente</th>
+                                <th>Tipo Animale</th>
+                                <th>Status</th>
+                                <th>Posizione</th>
+                                <th>Data</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                data.posts.forEach(post => {
+                    html += `
+                        <tr>
+                            <td>${post.id}</td>
+                            <td><img src="${post.imageUrl}" class="image-preview" alt="Post image"></td>
+                            <td>${post.User ? post.User.username : 'N/A'}</td>
+                            <td>${post.animalType || 'N/A'}</td>
+                            <td>${post.animalStatus || 'N/A'}</td>
+                            <td>${post.locationName || 'N/A'}</td>
+                            <td>${new Date(post.createdAt).toLocaleDateString('it-IT')}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                
+                document.getElementById('posts-content').innerHTML = html;
+            } catch (error) {
+                document.getElementById('posts-content').innerHTML = 
+                    `<div class="error">Errore nel caricamento dei post: ${error.message}</div>`;
+            }
+        }
+        
+        async function loadPets() {
+            try {
+                const response = await fetch('/admin/pets');
+                const data = await response.json();
+                
+                let html = `
+                    <p>Totale animali: <strong>${data.count}</strong></p>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Immagine</th>
+                                <th>Nome</th>
+                                <th>Tipo</th>
+                                <th>Proprietario</th>
+                                <th>Età</th>
+                                <th>Genere</th>
+                                <th>Data Registrazione</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                data.pets.forEach(pet => {
+                    html += `
+                        <tr>
+                            <td>${pet.id}</td>
+                            <td><img src="${pet.imageUrl}" class="image-preview" alt="Pet image"></td>
+                            <td>${pet.petName}</td>
+                            <td>${pet.petType}</td>
+                            <td>${pet.User ? pet.User.username : 'N/A'}</td>
+                            <td>${pet.petAge || 'N/A'}</td>
+                            <td>${pet.petGender || 'N/A'}</td>
+                            <td>${new Date(pet.createdAt).toLocaleDateString('it-IT')}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                
+                document.getElementById('pets-content').innerHTML = html;
+            } catch (error) {
+                document.getElementById('pets-content').innerHTML = 
+                    `<div class="error">Errore nel caricamento degli animali: ${error.message}</div>`;
+            }
+        }
+        
+        async function executeQuery() {
+            const query = document.getElementById('queryInput').value.trim();
+            if (!query) {
+                alert('Inserisci una query');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/admin/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.results) {
+                    let html = `
+                        <h3>Risultati Query</h3>
+                        <p>Righe trovate: <strong>${data.count}</strong></p>
+                    `;
+                    
+                    if (data.results.length > 0) {
+                        const columns = Object.keys(data.results[0]);
+                        
+                        html += `
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                        `;
+                        
+                        columns.forEach(col => {
+                            html += `<th>${col}</th>`;
+                        });
+                        
+                        html += `
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+                        
+                        data.results.forEach(row => {
+                            html += '<tr>';
+                            columns.forEach(col => {
+                                let value = row[col];
+                                if (value && typeof value === 'string' && value.startsWith('http') && (value.includes('cloudinary') || value.includes('image'))) {
+                                    value = `<img src="${value}" class="image-preview" alt="Image">`;
+                                } else if (value instanceof Date) {
+                                    value = value.toLocaleDateString('it-IT');
+                                } else if (value === null || value === undefined) {
+                                    value = 'NULL';
+                                }
+                                html += `<td>${value}</td>`;
+                            });
+                            html += '</tr>';
+                        });
+                        
+                        html += '</tbody></table>';
+                    }
+                    
+                    document.getElementById('query-results').innerHTML = html;
+                } else {
+                    document.getElementById('query-results').innerHTML = 
+                        `<div class="error">Errore: ${data.error}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('query-results').innerHTML = 
+                    `<div class="error">Errore nell'esecuzione della query: ${error.message}</div>`;
+            }
+        }
+        
+        // Carica le statistiche iniziali quando la pagina si carica
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+        });
+    </script>
+</body>
+</html>
