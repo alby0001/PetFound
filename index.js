@@ -295,6 +295,10 @@ app.get('/report-lost-form.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'report-lost-form.js'));
 });
 
+app.get('/admin.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
 // API per la registrazione
 app.post('/register', async (req, res) => {
   const { username, password } = req.body;
