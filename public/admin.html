@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Database - PetFinder</title>
@@ -178,6 +179,8 @@
             <button class="nav-btn" onclick="showSection('posts')">Post</button>
             <button class="nav-btn" onclick="showSection('pets')">Animali</button>
             <button class="nav-btn" onclick="showSection('query')">Query Personalizzata</button>
+            <button id="export-btn" class="nav-btn" onclick="exportToExcel()">📊 Esporta Excel</button>
+
         </div>
         
         <!-- Sezione Statistiche -->
