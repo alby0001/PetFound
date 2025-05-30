@@ -7,34 +7,23 @@ class PetFinderSearch {
     init() {
         this.bindEvents();
         this.updatePlaceholder();
-        // Aggiungi un delay per assicurarti che la pagina sia completamente caricata
-        setTimeout(() => {
-            this.checkUrlParameters();
-        }, 100);
+        this.checkUrlParameters();
     }
 
     checkUrlParameters() {
-        console.log('Controllo parametri URL...');
-        console.log('Current URL:', window.location.href);
-        console.log('Pathname:', window.location.pathname);
-        console.log('Search:', window.location.search);
-        
         const urlPath = window.location.pathname;
         const urlParams = new URLSearchParams(window.location.search);
         
-        // Metodo 1: Controlla parametri nel path come /search.html/IDanimale=2
+        // Controlla se ci sono parametri nell'URL come /search.html/IDanimale=2
         const pathMatch = urlPath.match(/\/search\.html\/ID(animale|utente)=(\d+)/i);
-        console.log('Path match:', pathMatch);
         
-        // Metodo 2: Controlla parametri query string come ?IDanimale=2
+        // Oppure controlla parametri query string come ?IDanimale=2
         const animalId = urlParams.get('IDanimale') || urlParams.get('idanimale');
         const userId = urlParams.get('IDutente') || urlParams.get('idutente');
-        console.log('Query params - animalId:', animalId, 'userId:', userId);
         
         if (pathMatch) {
             const type = pathMatch[1].toLowerCase();
             const id = pathMatch[2];
-            console.log('Trovato match nel path:', type, id);
             
             if (type === 'animale') {
                 this.setSearchType('pet');
@@ -44,30 +33,17 @@ class PetFinderSearch {
                 this.performDirectSearch('user', id);
             }
         } else if (animalId) {
-            console.log('Trovato animalId nei query params:', animalId);
             this.setSearchType('pet');
             this.performDirectSearch('pet', animalId);
         } else if (userId) {
-            console.log('Trovato userId nei query params:', userId);
             this.setSearchType('user');
             this.performDirectSearch('user', userId);
-        } else {
-            console.log('Nessun parametro URL trovato');
         }
     }
 
     async performDirectSearch(type, id) {
-        console.log('Esecuzione ricerca diretta:', type, id);
         const searchInput = document.getElementById('searchInput');
         const searchBtn = document.getElementById('searchBtn');
-        
-        if (!searchInput || !searchBtn) {
-            console.error('Elementi input non trovati, riprovo tra 500ms...');
-            setTimeout(() => {
-                this.performDirectSearch(type, id);
-            }, 500);
-            return;
-        }
         
         // Imposta il valore nell'input
         searchInput.value = id;
@@ -95,57 +71,34 @@ class PetFinderSearch {
     }
 
     bindEvents() {
-        // Aspetta che gli elementi siano disponibili
-        const waitForElements = () => {
-            const searchTypeButtons = document.querySelectorAll('.search-type-btn');
-            const searchBtn = document.getElementById('searchBtn');
-            const searchInput = document.getElementById('searchInput');
-            
-            if (searchTypeButtons.length === 0 || !searchBtn || !searchInput) {
-                console.log('Elementi non ancora disponibili, riprovo...');
-                setTimeout(waitForElements, 100);
-                return;
-            }
-            
-            console.log('Elementi trovati, binding eventi...');
-            
-            // Gestione bottoni tipo ricerca
-            searchTypeButtons.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    this.setSearchType(e.target.dataset.type);
-                });
+        // Gestione bottoni tipo ricerca
+        document.querySelectorAll('.search-type-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                this.setSearchType(e.target.dataset.type);
             });
+        });
 
-            // Gestione bottone ricerca
-            searchBtn.addEventListener('click', () => {
+        // Gestione bottone ricerca
+        document.getElementById('searchBtn').addEventListener('click', () => {
+            this.performSearch();
+        });
+
+        // Gestione invio con Enter
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
                 this.performSearch();
-            });
-
-            // Gestione invio con Enter
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    this.performSearch();
-                }
-            });
-            
-            console.log('Eventi collegati con successo');
-        };
-        
-        waitForElements();
+            }
+        });
     }
 
     setSearchType(type) {
-        console.log('Impostazione tipo ricerca:', type);
         this.currentSearchType = type;
         
         // Aggiorna UI bottoni
         document.querySelectorAll('.search-type-btn').forEach(btn => {
             btn.classList.remove('active');
         });
-        const activeBtn = document.querySelector(`[data-type="${type}"]`);
-        if (activeBtn) {
-            activeBtn.classList.add('active');
-        }
+        document.querySelector(`[data-type="${type}"]`).classList.add('active');
         
         // Aggiorna placeholder
         this.updatePlaceholder();
@@ -156,16 +109,11 @@ class PetFinderSearch {
 
     updatePlaceholder() {
         const input = document.getElementById('searchInput');
-        if (input) {
-            const placeholder = this.currentSearchType === 'user' 
-                ? 'Inserisci ID utente...' 
-                : 'Inserisci ID animale...';
-            input.placeholder = placeholder;
-            // Non pulire il valore se stiamo caricando da URL
-            if (!window.location.pathname.includes('/ID') && !window.location.search.includes('ID')) {
-                input.value = '';
-            }
-        }
+        const placeholder = this.currentSearchType === 'user' 
+            ? 'Inserisci ID utente...' 
+            : 'Inserisci ID animale...';
+        input.placeholder = placeholder;
+        input.value = '';
     }
 
     async performSearch() {
@@ -206,7 +154,6 @@ class PetFinderSearch {
     }
 
     async searchUser(userId) {
-        console.log('Ricerca utente ID:', userId);
         try {
             // Cerca l'utente tramite i suoi post (non abbiamo un endpoint diretto per gli utenti)
             const response = await fetch(`/user-posts/${userId}`);
@@ -250,7 +197,6 @@ class PetFinderSearch {
     }
 
     async searchPet(petId) {
-        console.log('Ricerca animale ID:', petId);
         try {
             const response = await fetch(`/pets/details/${petId}`);
             
@@ -273,11 +219,6 @@ class PetFinderSearch {
     displayUserResults(userId, username, posts, pets) {
         const resultsHeader = document.getElementById('resultsHeader');
         const resultsContent = document.getElementById('resultsContent');
-
-        if (!resultsHeader || !resultsContent) {
-            console.error('Elementi risultati non trovati');
-            return;
-        }
 
         resultsHeader.textContent = `Risultati per Utente ID: ${userId}`;
 
@@ -307,13 +248,27 @@ class PetFinderSearch {
                     <div class="posts-list">
                         <h4>Post recenti:</h4>
                         ${posts.slice(0, 5).map(post => `
-                            <div class="post-item">
-                                <strong>${post.animalType || 'Animale'}</strong> - ${post.animalStatus || 'Stato sconosciuto'}
-                                <br><small>${post.description ? post.description.substring(0, 100) + '...' : 'Nessuna descrizione'}</small>
-                                <br><small>📅 ${new Date(post.createdAt).toLocaleDateString('it-IT')}</small>
+                            <div class="post-item-with-image">
+                                <div class="post-image-container">
+                                    <img src="${post.imageUrl}" alt="Immagine post" class="post-image" onerror="this.style.display='none'">
+                                </div>
+                                <div class="post-content">
+                                    <div class="post-header">
+                                        <strong>${post.animalType || 'Animale'}</strong> - 
+                                        <span class="status-badge status-${(post.animalStatus || 'smarrito').toLowerCase()}">${post.animalStatus || 'Smarrito'}</span>
+                                    </div>
+                                    <div class="post-description">
+                                        ${post.description ? post.description.substring(0, 120) + (post.description.length > 120 ? '...' : '') : 'Nessuna descrizione'}
+                                    </div>
+                                    <div class="post-meta">
+                                        ${post.locationName ? `📍 ${post.locationName}` : ''}
+                                        ${post.contactInfo ? `📞 ${post.contactInfo}` : ''}
+                                        <br><small>📅 ${new Date(post.createdAt).toLocaleDateString('it-IT')}</small>
+                                    </div>
+                                </div>
                             </div>
                         `).join('')}
-                        ${posts.length > 5 ? `<small>... e altri ${posts.length - 5} post</small>` : ''}
+                        ${posts.length > 5 ? `<div class="more-posts">... e altri ${posts.length - 5} post</div>` : ''}
                     </div>
                 ` : ''}
 
@@ -321,13 +276,28 @@ class PetFinderSearch {
                     <div class="posts-list">
                         <h4>Animali domestici registrati:</h4>
                         ${pets.slice(0, 3).map(pet => `
-                            <div class="post-item">
-                                <strong>${pet.petName}</strong> - ${pet.petType}
-                                ${pet.petBreed ? `<br><small>Razza: ${pet.petBreed}</small>` : ''}
-                                <br><small>📅 Registrato il ${new Date(pet.createdAt).toLocaleDateString('it-IT')}</small>
+                            <div class="post-item-with-image">
+                                <div class="post-image-container">
+                                    <img src="${pet.imageUrl}" alt="${pet.petName}" class="post-image" onerror="this.style.display='none'">
+                                </div>
+                                <div class="post-content">
+                                    <div class="post-header">
+                                        <strong>${pet.petName}</strong> - ${pet.petType}
+                                    </div>
+                                    <div class="post-description">
+                                        ${pet.petBreed ? `Razza: ${pet.petBreed}` : ''}
+                                        ${pet.petAge ? ` • Età: ${pet.petAge}` : ''}
+                                        ${pet.petGender ? ` • ${pet.petGender}` : ''}
+                                        ${pet.petColor ? ` • Colore: ${pet.petColor}` : ''}
+                                    </div>
+                                    <div class="post-meta">
+                                        ${pet.petMicrochip ? `🏷️ Microchip: ${pet.petMicrochip}` : ''}
+                                        <br><small>📅 Registrato il ${new Date(pet.createdAt).toLocaleDateString('it-IT')}</small>
+                                    </div>
+                                </div>
                             </div>
                         `).join('')}
-                        ${pets.length > 3 ? `<small>... e altri ${pets.length - 3} animali</small>` : ''}
+                        ${pets.length > 3 ? `<div class="more-posts">... e altri ${pets.length - 3} animali</div>` : ''}
                     </div>
                 ` : ''}
             </div>
@@ -340,11 +310,6 @@ class PetFinderSearch {
         const resultsHeader = document.getElementById('resultsHeader');
         const resultsContent = document.getElementById('resultsContent');
 
-        if (!resultsHeader || !resultsContent) {
-            console.error('Elementi risultati non trovati');
-            return;
-        }
-
         resultsHeader.textContent = `Risultati per Animale ID: ${pet.id}`;
 
         resultsContent.innerHTML = `
@@ -354,9 +319,11 @@ class PetFinderSearch {
                     <span class="result-id">ID: ${pet.id}</span>
                 </div>
                 
-                <div style="display: flex; align-items: flex-start; gap: 1rem;">
-                    ${pet.imageUrl ? `<img src="${pet.imageUrl}" alt="${pet.petName}" class="pet-image">` : ''}
-                    <div class="result-details" style="flex: 1;">
+                <div class="pet-main-info">
+                    <div class="pet-image-container">
+                        <img src="${pet.imageUrl}" alt="${pet.petName}" class="pet-main-image" onerror="this.style.display='none'">
+                    </div>
+                    <div class="pet-info-grid">
                         <div class="detail-item">
                             <span class="detail-label">Nome</span>
                             <span class="detail-value">${pet.petName}</span>
@@ -407,11 +374,9 @@ class PetFinderSearch {
                 </div>
                 
                 ${pet.petNotes ? `
-                    <div style="margin-top: 1rem;">
-                        <span class="detail-label">Note:</span>
-                        <p style="margin-top: 0.5rem; padding: 0.5rem; background: white; border-radius: 4px; border: 1px solid #e0e0e0;">
-                            ${pet.petNotes}
-                        </p>
+                    <div class="pet-notes">
+                        <h4>Note:</h4>
+                        <p class="notes-content">${pet.petNotes}</p>
                     </div>
                 ` : ''}
             </div>
@@ -424,34 +389,26 @@ class PetFinderSearch {
         const resultsContainer = document.getElementById('resultsContainer');
         const resultsContent = document.getElementById('resultsContent');
         
-        if (resultsContent) {
-            resultsContent.innerHTML = '<div class="loading">🔍 Ricerca in corso...</div>';
-        }
-        if (resultsContainer) {
-            resultsContainer.style.display = 'block';
-        }
+        resultsContent.innerHTML = '<div class="loading">🔍 Ricerca in corso...</div>';
+        resultsContainer.style.display = 'block';
     }
 
     showResults() {
         const resultsContainer = document.getElementById('resultsContainer');
-        if (resultsContainer) {
-            resultsContainer.style.display = 'block';
-        }
+        resultsContainer.style.display = 'block';
     }
 
     hideResults() {
         const resultsContainer = document.getElementById('resultsContainer');
-        if (resultsContainer) {
-            resultsContainer.style.display = 'none';
-        }
+        resultsContainer.style.display = 'none';
     }
 
     showNoResults(message) {
         const resultsHeader = document.getElementById('resultsHeader');
         const resultsContent = document.getElementById('resultsContent');
 
-        if (resultsHeader) resultsHeader.textContent = 'Nessun risultato';
-        if (resultsContent) resultsContent.innerHTML = `<div class="no-results">${message}</div>`;
+        resultsHeader.textContent = 'Nessun risultato';
+        resultsContent.innerHTML = `<div class="no-results">${message}</div>`;
         
         this.showResults();
     }
@@ -460,8 +417,8 @@ class PetFinderSearch {
         const resultsHeader = document.getElementById('resultsHeader');
         const resultsContent = document.getElementById('resultsContent');
 
-        if (resultsHeader) resultsHeader.textContent = 'Errore';
-        if (resultsContent) resultsContent.innerHTML = `<div class="error-message">❌ ${message}</div>`;
+        resultsHeader.textContent = 'Errore';
+        resultsContent.innerHTML = `<div class="error-message">❌ ${message}</div>`;
         
         this.showResults();
     }
@@ -469,15 +426,5 @@ class PetFinderSearch {
 
 // Inizializza l'applicazione quando il DOM è caricato
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM caricato, inizializzazione PetFinderSearch...');
     new PetFinderSearch();
-});
-
-// Backup: inizializza anche su window.load se DOMContentLoaded non è scattato
-window.addEventListener('load', () => {
-    if (!window.petFinderSearchInitialized) {
-        console.log('Inizializzazione backup su window.load...');
-        window.petFinderSearchInitialized = true;
-        new PetFinderSearch();
-    }
 });
