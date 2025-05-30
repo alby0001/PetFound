@@ -639,6 +639,14 @@ app.get('/test-connections.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'test-connections.html'));
 });
 
+// Servire la pagina di ricerca per cercare un animale o un utente
+app.get('/search.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'search.html'));
+});
+
+app.get('/search.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'search.js'));
+});
 
 // API per registrare un nuovo animale domestico (ora con Cloudinary)
 app.post('/pets', async (req, res) => {
