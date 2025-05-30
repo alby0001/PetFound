@@ -640,6 +640,32 @@ app.get('/test-connections.html', (req, res) => {
 });
 
 // Servire la pagina di ricerca per cercare un animale o un utente
+
+
+// Route per ricerca con parametri URL - animali
+app.get('/search.html/IDanimale=:id', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'search.html'));
+});
+
+app.get('/search.html/idanimale=:id', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'search.html'));
+});
+
+// Route per ricerca con parametri URL - utenti
+app.get('/search.html/IDutente=:id', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'search.html'));
+});
+
+app.get('/search.html/idutente=:id', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'search.html'));
+});
+
+// Route generica per parametri di ricerca (fallback)
+app.get('/search.html/:param', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'search.html'));
+});
+
+// Servire la pagina di ricerca normale
 app.get('/search.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'search.html'));
 });
