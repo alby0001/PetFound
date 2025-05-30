@@ -7,23 +7,34 @@ class PetFinderSearch {
     init() {
         this.bindEvents();
         this.updatePlaceholder();
-        this.checkUrlParameters();
+        // Aggiungi un delay per assicurarti che la pagina sia completamente caricata
+        setTimeout(() => {
+            this.checkUrlParameters();
+        }, 100);
     }
 
     checkUrlParameters() {
+        console.log('Controllo parametri URL...');
+        console.log('Current URL:', window.location.href);
+        console.log('Pathname:', window.location.pathname);
+        console.log('Search:', window.location.search);
+        
         const urlPath = window.location.pathname;
         const urlParams = new URLSearchParams(window.location.search);
         
-        // Controlla se ci sono parametri nell'URL come /search.html/IDanimale=2
+        // Metodo 1: Controlla parametri nel path come /search.html/IDanimale=2
         const pathMatch = urlPath.match(/\/search\.html\/ID(animale|utente)=(\d+)/i);
+        console.log('Path match:', pathMatch);
         
-        // Oppure controlla parametri query string come ?IDanimale=2
+        // Metodo 2: Controlla parametri query string come ?IDanimale=2
         const animalId = urlParams.get('IDanimale') || urlParams.get('idanimale');
         const userId = urlParams.get('IDutente') || urlParams.get('idutente');
+        console.log('Query params - animalId:', animalId, 'userId:', userId);
         
         if (pathMatch) {
             const type = pathMatch[1].toLowerCase();
             const id = pathMatch[2];
+            console.log('Trovato match nel path:', type, id);
             
             if (type === 'animale') {
                 this.setSearchType('pet');
@@ -33,17 +44,30 @@ class PetFinderSearch {
                 this.performDirectSearch('user', id);
             }
         } else if (animalId) {
+            console.log('Trovato animalId nei query params:', animalId);
             this.setSearchType('pet');
             this.performDirectSearch('pet', animalId);
         } else if (userId) {
+            console.log('Trovato userId nei query params:', userId);
             this.setSearchType('user');
             this.performDirectSearch('user', userId);
+        } else {
+            console.log('Nessun parametro URL trovato');
         }
     }
 
     async performDirectSearch(type, id) {
+        console.log('Esecuzione ricerca diretta:', type, id);
         const searchInput = document.getElementById('searchInput');
         const searchBtn = document.getElementById('searchBtn');
+        
+        if (!searchInput || !searchBtn) {
+            console.error('Elementi input non trovati, riprovo tra 500ms...');
+            setTimeout(() => {
+                this.performDirectSearch(type, id);
+            }, 500);
+            return;
+        }
         
         // Imposta il valore nell'input
         searchInput.value = id;
@@ -71,34 +95,57 @@ class PetFinderSearch {
     }
 
     bindEvents() {
-        // Gestione bottoni tipo ricerca
-        document.querySelectorAll('.search-type-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                this.setSearchType(e.target.dataset.type);
-            });
-        });
-
-        // Gestione bottone ricerca
-        document.getElementById('searchBtn').addEventListener('click', () => {
-            this.performSearch();
-        });
-
-        // Gestione invio con Enter
-        document.getElementById('searchInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.performSearch();
+        // Aspetta che gli elementi siano disponibili
+        const waitForElements = () => {
+            const searchTypeButtons = document.querySelectorAll('.search-type-btn');
+            const searchBtn = document.getElementById('searchBtn');
+            const searchInput = document.getElementById('searchInput');
+            
+            if (searchTypeButtons.length === 0 || !searchBtn || !searchInput) {
+                console.log('Elementi non ancora disponibili, riprovo...');
+                setTimeout(waitForElements, 100);
+                return;
             }
-        });
+            
+            console.log('Elementi trovati, binding eventi...');
+            
+            // Gestione bottoni tipo ricerca
+            searchTypeButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    this.setSearchType(e.target.dataset.type);
+                });
+            });
+
+            // Gestione bottone ricerca
+            searchBtn.addEventListener('click', () => {
+                this.performSearch();
+            });
+
+            // Gestione invio con Enter
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.performSearch();
+                }
+            });
+            
+            console.log('Eventi collegati con successo');
+        };
+        
+        waitForElements();
     }
 
     setSearchType(type) {
+        console.log('Impostazione tipo ricerca:', type);
         this.currentSearchType = type;
         
         // Aggiorna UI bottoni
         document.querySelectorAll('.search-type-btn').forEach(btn => {
             btn.classList.remove('active');
         });
-        document.querySelector(`[data-type="${type}"]`).classList.add('active');
+        const activeBtn = document.querySelector(`[data-type="${type}"]`);
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+        }
         
         // Aggiorna placeholder
         this.updatePlaceholder();
@@ -109,11 +156,16 @@ class PetFinderSearch {
 
     updatePlaceholder() {
         const input = document.getElementById('searchInput');
-        const placeholder = this.currentSearchType === 'user' 
-            ? 'Inserisci ID utente...' 
-            : 'Inserisci ID animale...';
-        input.placeholder = placeholder;
-        input.value = '';
+        if (input) {
+            const placeholder = this.currentSearchType === 'user' 
+                ? 'Inserisci ID utente...' 
+                : 'Inserisci ID animale...';
+            input.placeholder = placeholder;
+            // Non pulire il valore se stiamo caricando da URL
+            if (!window.location.pathname.includes('/ID') && !window.location.search.includes('ID')) {
+                input.value = '';
+            }
+        }
     }
 
     async performSearch() {
@@ -154,6 +206,7 @@ class PetFinderSearch {
     }
 
     async searchUser(userId) {
+        console.log('Ricerca utente ID:', userId);
         try {
             // Cerca l'utente tramite i suoi post (non abbiamo un endpoint diretto per gli utenti)
             const response = await fetch(`/user-posts/${userId}`);
@@ -197,6 +250,7 @@ class PetFinderSearch {
     }
 
     async searchPet(petId) {
+        console.log('Ricerca animale ID:', petId);
         try {
             const response = await fetch(`/pets/details/${petId}`);
             
@@ -219,6 +273,11 @@ class PetFinderSearch {
     displayUserResults(userId, username, posts, pets) {
         const resultsHeader = document.getElementById('resultsHeader');
         const resultsContent = document.getElementById('resultsContent');
+
+        if (!resultsHeader || !resultsContent) {
+            console.error('Elementi risultati non trovati');
+            return;
+        }
 
         resultsHeader.textContent = `Risultati per Utente ID: ${userId}`;
 
@@ -280,6 +339,11 @@ class PetFinderSearch {
     displayPetResults(pet) {
         const resultsHeader = document.getElementById('resultsHeader');
         const resultsContent = document.getElementById('resultsContent');
+
+        if (!resultsHeader || !resultsContent) {
+            console.error('Elementi risultati non trovati');
+            return;
+        }
 
         resultsHeader.textContent = `Risultati per Animale ID: ${pet.id}`;
 
@@ -360,26 +424,34 @@ class PetFinderSearch {
         const resultsContainer = document.getElementById('resultsContainer');
         const resultsContent = document.getElementById('resultsContent');
         
-        resultsContent.innerHTML = '<div class="loading">🔍 Ricerca in corso...</div>';
-        resultsContainer.style.display = 'block';
+        if (resultsContent) {
+            resultsContent.innerHTML = '<div class="loading">🔍 Ricerca in corso...</div>';
+        }
+        if (resultsContainer) {
+            resultsContainer.style.display = 'block';
+        }
     }
 
     showResults() {
         const resultsContainer = document.getElementById('resultsContainer');
-        resultsContainer.style.display = 'block';
+        if (resultsContainer) {
+            resultsContainer.style.display = 'block';
+        }
     }
 
     hideResults() {
         const resultsContainer = document.getElementById('resultsContainer');
-        resultsContainer.style.display = 'none';
+        if (resultsContainer) {
+            resultsContainer.style.display = 'none';
+        }
     }
 
     showNoResults(message) {
         const resultsHeader = document.getElementById('resultsHeader');
         const resultsContent = document.getElementById('resultsContent');
 
-        resultsHeader.textContent = 'Nessun risultato';
-        resultsContent.innerHTML = `<div class="no-results">${message}</div>`;
+        if (resultsHeader) resultsHeader.textContent = 'Nessun risultato';
+        if (resultsContent) resultsContent.innerHTML = `<div class="no-results">${message}</div>`;
         
         this.showResults();
     }
@@ -388,8 +460,8 @@ class PetFinderSearch {
         const resultsHeader = document.getElementById('resultsHeader');
         const resultsContent = document.getElementById('resultsContent');
 
-        resultsHeader.textContent = 'Errore';
-        resultsContent.innerHTML = `<div class="error-message">❌ ${message}</div>`;
+        if (resultsHeader) resultsHeader.textContent = 'Errore';
+        if (resultsContent) resultsContent.innerHTML = `<div class="error-message">❌ ${message}</div>`;
         
         this.showResults();
     }
@@ -397,5 +469,15 @@ class PetFinderSearch {
 
 // Inizializza l'applicazione quando il DOM è caricato
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM caricato, inizializzazione PetFinderSearch...');
     new PetFinderSearch();
+});
+
+// Backup: inizializza anche su window.load se DOMContentLoaded non è scattato
+window.addEventListener('load', () => {
+    if (!window.petFinderSearchInitialized) {
+        console.log('Inizializzazione backup su window.load...');
+        window.petFinderSearchInitialized = true;
+        new PetFinderSearch();
+    }
 });
