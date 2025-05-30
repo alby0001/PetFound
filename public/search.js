@@ -7,6 +7,67 @@ class PetFinderSearch {
     init() {
         this.bindEvents();
         this.updatePlaceholder();
+        this.checkUrlParameters();
+    }
+
+    checkUrlParameters() {
+        const urlPath = window.location.pathname;
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Controlla se ci sono parametri nell'URL come /search.html/IDanimale=2
+        const pathMatch = urlPath.match(/\/search\.html\/ID(animale|utente)=(\d+)/i);
+        
+        // Oppure controlla parametri query string come ?IDanimale=2
+        const animalId = urlParams.get('IDanimale') || urlParams.get('idanimale');
+        const userId = urlParams.get('IDutente') || urlParams.get('idutente');
+        
+        if (pathMatch) {
+            const type = pathMatch[1].toLowerCase();
+            const id = pathMatch[2];
+            
+            if (type === 'animale') {
+                this.setSearchType('pet');
+                this.performDirectSearch('pet', id);
+            } else if (type === 'utente') {
+                this.setSearchType('user');
+                this.performDirectSearch('user', id);
+            }
+        } else if (animalId) {
+            this.setSearchType('pet');
+            this.performDirectSearch('pet', animalId);
+        } else if (userId) {
+            this.setSearchType('user');
+            this.performDirectSearch('user', userId);
+        }
+    }
+
+    async performDirectSearch(type, id) {
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        
+        // Imposta il valore nell'input
+        searchInput.value = id;
+        
+        // Disabilita il bottone durante la ricerca
+        searchBtn.disabled = true;
+        searchBtn.textContent = 'Cercando...';
+
+        try {
+            this.showLoading();
+
+            if (type === 'user') {
+                await this.searchUser(parseInt(id));
+            } else {
+                await this.searchPet(parseInt(id));
+            }
+        } catch (error) {
+            console.error('Errore durante la ricerca automatica:', error);
+            this.showError('Errore durante la ricerca automatica. Riprova più tardi.');
+        } finally {
+            // Riabilita il bottone
+            searchBtn.disabled = false;
+            searchBtn.textContent = 'Cerca';
+        }
     }
 
     bindEvents() {
