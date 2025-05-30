@@ -1,0 +1,356 @@
+/* search-style.css - Tema Azzurro per PetFinder */
+
+/* Reset e base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    color: #1565c0;
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Bottone back */
+.back-btn {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    padding: 0.75rem 1.25rem;
+    background: linear-gradient(135deg, #1976d2, #1565c0);
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+    z-index: 1000;
+}
+
+.back-btn:hover {
+    background: linear-gradient(135deg, #1565c0, #0d47a1);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(25, 118, 210, 0.4);
+}
+
+/* Container principale */
+.search-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(25, 118, 210, 0.15);
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}
+
+.search-header {
+    background: linear-gradient(135deg, #1976d2, #1565c0);
+    color: white;
+    padding: 2rem;
+    text-align: center;
+}
+
+.search-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.search-header p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    font-weight: 300;
+}
+
+/* Form di ricerca */
+.search-form {
+    padding: 2rem;
+}
+
+.search-type-selector {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.search-type-btn {
+    flex: 1;
+    padding: 1rem;
+    border: 2px solid #bbdefb;
+    background: white;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #1565c0;
+}
+
+.search-type-btn:hover {
+    border-color: #1976d2;
+    background: #f3f9ff;
+    transform: translateY(-2px);
+}
+
+.search-type-btn.active {
+    border-color: #1976d2;
+    background: linear-gradient(135deg, #1976d2, #1565c0);
+    color: white;
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+}
+
+.search-input-group {
+    display: flex;
+    gap: 1rem;
+    align-items: stretch;
+}
+
+.search-input {
+    flex: 1;
+    padding: 1rem 1.25rem;
+    border: 2px solid #bbdefb;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    background: white;
+    color: #1565c0;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #1976d2;
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+.search-btn {
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, #1976d2, #1565c0);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+}
+
+.search-btn:hover {
+    background: linear-gradient(135deg, #1565c0, #0d47a1);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(25, 118, 210, 0.4);
+}
+
+.search-btn:disabled {
+    background: #90caf9;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Risultati */
+.results-container {
+    margin-top: 2rem;
+    background: #f8fcff;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.results-header {
+    background: linear-gradient(135deg, #42a5f5, #1976d2);
+    color: white;
+    padding: 1.5rem 2rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+#resultsContent {
+    padding: 2rem;
+}
+
+/* Card risultati */
+.result-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(25, 118, 210, 0.1);
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.result-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(25, 118, 210, 0.15);
+}
+
+.user-result {
+    border-left: 6px solid #2196f3;
+}
+
+.pet-result {
+    border-left: 6px solid #ff9800;
+}
+
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    border-bottom: 1px solid #e1f5fe;
+}
+
+.result-header h3 {
+    font-size: 1.5rem;
+    color: #1565c0;
+    margin: 0;
+}
+
+.result-id {
+    background: #1976d2;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* Dettagli risultati */
+.result-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    padding: 2rem;
+    background: white;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    background: #f8fcff;
+    border-radius: 12px;
+    border: 1px solid #e3f2fd;
+}
+
+.detail-label {
+    font-size: 0.9rem;
+    color: #1976d2;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-value {
+    font-weight: 600;
+    color: #1565c0;
+    font-size: 1.1rem;
+}
+
+/* Informazioni pet principali */
+.pet-main-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    padding: 2rem;
+    background: white;
+}
+
+.pet-image-container {
+    text-align: center;
+}
+
+.pet-main-image {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 6px solid #bbdefb;
+    box-shadow: 0 8px 20px rgba(25, 118, 210, 0.2);
+}
+
+.pet-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    width: 100%;
+    max-width: 600px;
+}
+
+/* Liste post e pets */
+.posts-list {
+    margin-top: 2rem;
+    padding: 2rem;
+    background: #f8fcff;
+    border-top: 1px solid #e3f2fd;
+}
+
+.posts-list h4 {
+    color: #1565c0;
+    margin-bottom: 1.5rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.post-item-with-image {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    background: white;
+    border: 1px solid #e3f2fd;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.post-item-with-image:hover {
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.1);
+    transform: translateY(-2px);
+}
+
+.post-image-container {
+    flex-shrink: 0;
+}
+
+.post-image {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 2px solid #bbdefb;
+}
+
+.post-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.post-header {
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    color: #1565c0;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
