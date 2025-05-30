@@ -639,39 +639,46 @@ app.get('/test-connections.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'test-connections.html'));
 });
 
-// Servire la pagina di ricerca per cercare un animale o un utente
+// Sostituisci le route di ricerca esistenti nel tuo index.js con queste:
 
-
-// Route per ricerca con parametri URL - animali
+// Route per ricerca con parametri URL - animali (case insensitive)
 app.get('/search.html/IDanimale=:id', (req, res) => {
+  console.log('Route IDanimale chiamata con ID:', req.params.id);
   res.sendFile(path.join(__dirname, 'public', 'search.html'));
 });
 
 app.get('/search.html/idanimale=:id', (req, res) => {
+  console.log('Route idanimale chiamata con ID:', req.params.id);
   res.sendFile(path.join(__dirname, 'public', 'search.html'));
 });
 
-// Route per ricerca con parametri URL - utenti
+// Route per ricerca con parametri URL - utenti (case insensitive)
 app.get('/search.html/IDutente=:id', (req, res) => {
+  console.log('Route IDutente chiamata con ID:', req.params.id);
   res.sendFile(path.join(__dirname, 'public', 'search.html'));
 });
 
 app.get('/search.html/idutente=:id', (req, res) => {
+  console.log('Route idutente chiamata con ID:', req.params.id);
   res.sendFile(path.join(__dirname, 'public', 'search.html'));
 });
 
-// Route generica per parametri di ricerca (fallback)
-app.get('/search.html/:param', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'search.html'));
-});
-
-// Servire la pagina di ricerca normale
+// Route generica per query parameters (alternativa)
 app.get('/search.html', (req, res) => {
+  console.log('Route search.html chiamata');
+  console.log('Query params:', req.query);
+  console.log('URL path:', req.path);
+  console.log('Original URL:', req.originalUrl);
   res.sendFile(path.join(__dirname, 'public', 'search.html'));
 });
 
-app.get('/search.js', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'search.js'));
+// Route catch-all per debug (aggiungi temporaneamente per debug)
+app.get('/search.html/*', (req, res) => {
+  console.log('Route catch-all chiamata');
+  console.log('Params:', req.params);
+  console.log('Path:', req.path);
+  console.log('Original URL:', req.originalUrl);
+  res.sendFile(path.join(__dirname, 'public', 'search.html'));
 });
 
 // API per registrare un nuovo animale domestico (ora con Cloudinary)
