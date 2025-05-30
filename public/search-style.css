@@ -1,7 +1,7 @@
 /* search-style.css - Tema Azzurro per PetFinder */
 
 /* Reset e base */
-{
+* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -353,4 +353,239 @@ body {
     font-size: 0.8rem;
     font-weight: 600;
     text-transform: uppercase;
+}
+
+.status-smarrito {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.status-trovato {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.status-adottato {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.post-description {
+    color: #424242;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.post-meta {
+    font-size: 0.9rem;
+    color: #666;
+    line-height: 1.4;
+}
+
+.post-meta small {
+    color: #999;
+}
+
+.more-posts {
+    text-align: center;
+    padding: 1rem;
+    color: #1976d2;
+    font-style: italic;
+    font-weight: 500;
+}
+
+/* Note pet */
+.pet-notes {
+    padding: 2rem;
+    background: #f8fcff;
+    border-top: 1px solid #e3f2fd;
+}
+
+.pet-notes h4 {
+    color: #1565c0;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+.notes-content {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #e3f2fd;
+    color: #424242;
+    line-height: 1.6;
+}
+
+/* Stati speciali */
+.loading {
+    text-align: center;
+    padding: 3rem;
+    color: #1976d2;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.no-results {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+    font-style: italic;
+    font-size: 1.1rem;
+}
+
+.error-message {
+    background: linear-gradient(135deg, #ffebee, #ffcdd2);
+    color: #c62828;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #ffcdd2;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+    
+    .search-container {
+        margin: 1rem auto;
+        border-radius: 16px;
+    }
+    
+    .search-header {
+        padding: 1.5rem;
+    }
+    
+    .search-header h1 {
+        font-size: 2rem;
+    }
+    
+    .search-form {
+        padding: 1.5rem;
+    }
+    
+    .search-type-selector {
+        flex-direction: column;
+    }
+    
+    .search-input-group {
+        flex-direction: column;
+    }
+    
+    .search-btn {
+        padding: 1rem;
+    }
+    
+    .result-details {
+        grid-template-columns: 1fr;
+        padding: 1.5rem;
+    }
+    
+    .result-header {
+        padding: 1rem 1.5rem;
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .pet-main-info {
+        padding: 1.5rem;
+        gap: 1.5rem;
+    }
+    
+    .pet-main-image {
+        width: 150px;
+        height: 150px;
+    }
+    
+    .pet-info-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .posts-list {
+        padding: 1.5rem;
+    }
+    
+    .post-item-with-image {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+    }
+    
+    .post-image-container {
+        align-self: center;
+    }
+    
+    .back-btn {
+        position: static;
+        display: block;
+        margin: 1rem;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .search-header h1 {
+        font-size: 1.75rem;
+    }
+    
+    .search-header p {
+        font-size: 1rem;
+    }
+    
+    .search-type-btn {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    .search-input {
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+    }
+    
+    .search-btn {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+    
+    .result-header h3 {
+        font-size: 1.25rem;
+    }
+    
+    .detail-item {
+        padding: 0.75rem;
+    }
+    
+    .pet-main-image {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .post-image {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+/* Animazioni */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.result-card {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.post-item-with-image {
+    animation: fadeIn 0.3s ease-out;
 }
