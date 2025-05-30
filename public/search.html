@@ -4,226 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ricerca - PetFinder</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        .search-container {
-            max-width: 800px;
-            margin: 2rem auto;
-            padding: 2rem;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .search-form {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .search-type-selector {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .search-type-btn {
-            flex: 1;
-            padding: 0.75rem;
-            border: 2px solid #e0e0e0;
-            background: white;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .search-type-btn.active {
-            border-color: #4CAF50;
-            background: #4CAF50;
-            color: white;
-        }
-
-        .search-input-group {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .search-input {
-            flex: 1;
-            padding: 0.75rem;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-
-        .search-btn {
-            padding: 0.75rem 1.5rem;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: background 0.3s ease;
-        }
-
-        .search-btn:hover {
-            background: #45a049;
-        }
-
-        .search-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        .results-container {
-            margin-top: 2rem;
-        }
-
-        .results-header {
-            margin-bottom: 1rem;
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .result-card {
-            background: #f9f9f9;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .user-result {
-            border-left: 4px solid #2196F3;
-        }
-
-        .pet-result {
-            border-left: 4px solid #FF9800;
-        }
-
-        .result-header {
-            display: flex;
-            justify-content: between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-
-        .result-id {
-            font-size: 0.8rem;
-            color: #666;
-            background: #e0e0e0;
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-        }
-
-        .result-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-
-        .detail-item {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .detail-label {
-            font-size: 0.8rem;
-            color: #666;
-            margin-bottom: 0.2rem;
-        }
-
-        .detail-value {
-            font-weight: 500;
-        }
-
-        .pet-image {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-right: 1rem;
-        }
-
-        .posts-list {
-            margin-top: 1rem;
-        }
-
-        .post-item {
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
-            padding: 0.5rem;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .error-message {
-            background: #ffebee;
-            color: #c62828;
-            padding: 1rem;
-            border-radius: 8px;
-            border: 1px solid #ffcdd2;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            color: #666;
-        }
-
-        .no-results {
-            text-align: center;
-            padding: 2rem;
-            color: #666;
-            font-style: italic;
-        }
-
-        .back-btn {
-            position: fixed;
-            top: 1rem;
-            left: 1rem;
-            padding: 0.5rem 1rem;
-            background: #4CAF50;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 500;
-            transition: background 0.3s ease;
-        }
-
-        .back-btn:hover {
-            background: #45a049;
-        }
-
-        @media (max-width: 768px) {
-            .search-container {
-                margin: 1rem;
-                padding: 1rem;
-            }
-
-            .search-input-group {
-                flex-direction: column;
-            }
-
-            .result-details {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="search-style.css">
 </head>
 <body>
     <a href="feed.html" class="back-btn">← Torna al Feed</a>
 
     <div class="container">
         <div class="search-container">
-            <h1>🔍 Ricerca</h1>
-            <p>Cerca utenti o animali domestici utilizzando i loro ID</p>
+            <div class="search-header">
+                <h1>🔍 Ricerca</h1>
+                <p>Cerca utenti o animali domestici utilizzando i loro ID</p>
+            </div>
 
             <div class="search-form">
                 <div class="search-type-selector">
@@ -248,6 +39,437 @@
         </div>
     </div>
 
-    <script src="search.js"></script>
+    <script>
+class PetFinderSearch {
+    constructor() {
+        this.currentSearchType = 'user';
+        this.init();
+    }
+
+    init() {
+        this.bindEvents();
+        this.updatePlaceholder();
+        this.checkUrlParameters();
+    }
+
+    checkUrlParameters() {
+        const urlPath = window.location.pathname;
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Controlla se ci sono parametri nell'URL come /search.html/IDanimale=2
+        const pathMatch = urlPath.match(/\/search\.html\/ID(animale|utente)=(\d+)/i);
+        
+        // Oppure controlla parametri query string come ?IDanimale=2
+        const animalId = urlParams.get('IDanimale') || urlParams.get('idanimale');
+        const userId = urlParams.get('IDutente') || urlParams.get('idutente');
+        
+        if (pathMatch) {
+            const type = pathMatch[1].toLowerCase();
+            const id = pathMatch[2];
+            
+            if (type === 'animale') {
+                this.setSearchType('pet');
+                this.performDirectSearch('pet', id);
+            } else if (type === 'utente') {
+                this.setSearchType('user');
+                this.performDirectSearch('user', id);
+            }
+        } else if (animalId) {
+            this.setSearchType('pet');
+            this.performDirectSearch('pet', animalId);
+        } else if (userId) {
+            this.setSearchType('user');
+            this.performDirectSearch('user', userId);
+        }
+    }
+
+    async performDirectSearch(type, id) {
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        
+        // Imposta il valore nell'input
+        searchInput.value = id;
+        
+        // Disabilita il bottone durante la ricerca
+        searchBtn.disabled = true;
+        searchBtn.textContent = 'Cercando...';
+
+        try {
+            this.showLoading();
+
+            if (type === 'user') {
+                await this.searchUser(parseInt(id));
+            } else {
+                await this.searchPet(parseInt(id));
+            }
+        } catch (error) {
+            console.error('Errore durante la ricerca automatica:', error);
+            this.showError('Errore durante la ricerca automatica. Riprova più tardi.');
+        } finally {
+            // Riabilita il bottone
+            searchBtn.disabled = false;
+            searchBtn.textContent = 'Cerca';
+        }
+    }
+
+    bindEvents() {
+        // Gestione bottoni tipo ricerca
+        document.querySelectorAll('.search-type-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                this.setSearchType(e.target.dataset.type);
+            });
+        });
+
+        // Gestione bottone ricerca
+        document.getElementById('searchBtn').addEventListener('click', () => {
+            this.performSearch();
+        });
+
+        // Gestione invio con Enter
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.performSearch();
+            }
+        });
+    }
+
+    setSearchType(type) {
+        this.currentSearchType = type;
+        
+        // Aggiorna UI bottoni
+        document.querySelectorAll('.search-type-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector(`[data-type="${type}"]`).classList.add('active');
+        
+        // Aggiorna placeholder
+        this.updatePlaceholder();
+        
+        // Pulisci risultati precedenti
+        this.hideResults();
+    }
+
+    updatePlaceholder() {
+        const input = document.getElementById('searchInput');
+        const placeholder = this.currentSearchType === 'user' 
+            ? 'Inserisci ID utente...' 
+            : 'Inserisci ID animale...';
+        input.placeholder = placeholder;
+        input.value = '';
+    }
+
+    async performSearch() {
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const id = searchInput.value.trim();
+
+        if (!id) {
+            this.showError('Inserisci un ID valido');
+            return;
+        }
+
+        if (!/^\d+$/.test(id)) {
+            this.showError('L\'ID deve essere un numero');
+            return;
+        }
+
+        // Disabilita il bottone durante la ricerca
+        searchBtn.disabled = true;
+        searchBtn.textContent = 'Cercando...';
+
+        try {
+            this.showLoading();
+
+            if (this.currentSearchType === 'user') {
+                await this.searchUser(parseInt(id));
+            } else {
+                await this.searchPet(parseInt(id));
+            }
+        } catch (error) {
+            console.error('Errore durante la ricerca:', error);
+            this.showError('Errore durante la ricerca. Riprova più tardi.');
+        } finally {
+            // Riabilita il bottone
+            searchBtn.disabled = false;
+            searchBtn.textContent = 'Cerca';
+        }
+    }
+
+    async searchUser(userId) {
+        try {
+            // Cerca l'utente tramite i suoi post (non abbiamo un endpoint diretto per gli utenti)
+            const response = await fetch(`/user-posts/${userId}`);
+            
+            if (!response.ok) {
+                if (response.status === 404) {
+                    this.showNoResults(`Utente con ID ${userId} non trovato`);
+                    return;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const posts = await response.json();
+            
+            // Ottieni informazioni utente dal primo post (se esiste)
+            let username = 'Sconosciuto';
+            if (posts.length > 0) {
+                // Cerca di ottenere l'username da tutti i post
+                const allPostsResponse = await fetch('/posts');
+                if (allPostsResponse.ok) {
+                    const allPosts = await allPostsResponse.json();
+                    const userPost = allPosts.find(post => post.UserId === userId);
+                    if (userPost && userPost.User) {
+                        username = userPost.User.username;
+                    }
+                }
+            }
+
+            // Cerca anche gli animali dell'utente
+            const petsResponse = await fetch(`/pets/${userId}`);
+            let pets = [];
+            if (petsResponse.ok) {
+                pets = await petsResponse.json();
+            }
+
+            this.displayUserResults(userId, username, posts, pets);
+        } catch (error) {
+            console.error('Errore nella ricerca utente:', error);
+            this.showError('Errore nella ricerca dell\'utente');
+        }
+    }
+
+    async searchPet(petId) {
+        try {
+            const response = await fetch(`/pets/details/${petId}`);
+            
+            if (!response.ok) {
+                if (response.status === 404) {
+                    this.showNoResults(`Animale con ID ${petId} non trovato`);
+                    return;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const pet = await response.json();
+            this.displayPetResults(pet);
+        } catch (error) {
+            console.error('Errore nella ricerca animale:', error);
+            this.showError('Errore nella ricerca dell\'animale');
+        }
+    }
+
+    displayUserResults(userId, username, posts, pets) {
+        const resultsHeader = document.getElementById('resultsHeader');
+        const resultsContent = document.getElementById('resultsContent');
+
+        resultsHeader.textContent = `Risultati per Utente ID: ${userId}`;
+
+        resultsContent.innerHTML = `
+            <div class="result-card user-result">
+                <div class="result-header">
+                    <h3>👤 ${username}</h3>
+                    <span class="result-id">ID: ${userId}</span>
+                </div>
+                
+                <div class="result-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Username</span>
+                        <span class="detail-value">${username}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Post pubblicati</span>
+                        <span class="detail-value">${posts.length}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Animali registrati</span>
+                        <span class="detail-value">${pets.length}</span>
+                    </div>
+                </div>
+
+                ${posts.length > 0 ? `
+                    <div class="posts-list">
+                        <h4>Post recenti:</h4>
+                        ${posts.slice(0, 5).map(post => `
+                            <div class="post-item-with-image">
+                                <div class="post-image-container">
+                                    <img src="${post.imageUrl}" alt="Immagine post" class="post-image" onerror="this.style.display='none'">
+                                </div>
+                                <div class="post-content">
+                                    <div class="post-header">
+                                        <strong>${post.animalType || 'Animale'}</strong> - 
+                                        <span class="status-badge status-${(post.animalStatus || 'smarrito').toLowerCase()}">${post.animalStatus || 'Smarrito'}</span>
+                                    </div>
+                                    <div class="post-description">
+                                        ${post.description ? post.description.substring(0, 120) + (post.description.length > 120 ? '...' : '') : 'Nessuna descrizione'}
+                                    </div>
+                                    <div class="post-meta">
+                                        ${post.locationName ? `📍 ${post.locationName}` : ''}
+                                        ${post.contactInfo ? `📞 ${post.contactInfo}` : ''}
+                                        <br><small>📅 ${new Date(post.createdAt).toLocaleDateString('it-IT')}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                        ${posts.length > 5 ? `<div class="more-posts">... e altri ${posts.length - 5} post</div>` : ''}
+                    </div>
+                ` : ''}
+
+                ${pets.length > 0 ? `
+                    <div class="posts-list">
+                        <h4>Animali domestici registrati:</h4>
+                        ${pets.slice(0, 3).map(pet => `
+                            <div class="post-item-with-image">
+                                <div class="post-image-container">
+                                    <img src="${pet.imageUrl}" alt="${pet.petName}" class="post-image" onerror="this.style.display='none'">
+                                </div>
+                                <div class="post-content">
+                                    <div class="post-header">
+                                        <strong>${pet.petName}</strong> - ${pet.petType}
+                                    </div>
+                                    <div class="post-description">
+                                        ${pet.petBreed ? `Razza: ${pet.petBreed}` : ''}
+                                        ${pet.petAge ? ` • Età: ${pet.petAge}` : ''}
+                                        ${pet.petGender ? ` • ${pet.petGender}` : ''}
+                                        ${pet.petColor ? ` • Colore: ${pet.petColor}` : ''}
+                                    </div>
+                                    <div class="post-meta">
+                                        ${pet.petMicrochip ? `🏷️ Microchip: ${pet.petMicrochip}` : ''}
+                                        <br><small>📅 Registrato il ${new Date(pet.createdAt).toLocaleDateString('it-IT')}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                        ${pets.length > 3 ? `<div class="more-posts">... e altri ${pets.length - 3} animali</div>` : ''}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+
+        this.showResults();
+    }
+
+    displayPetResults(pet) {
+        const resultsHeader = document.getElementById('resultsHeader');
+        const resultsContent = document.getElementById('resultsContent');
+
+        resultsHeader.textContent = `Risultati per Animale ID: ${pet.id}`;
+
+        resultsContent.innerHTML = `
+            <div class="result-card pet-result">
+                <div class="result-header">
+                    <h3>🐕 ${pet.petName}</h3>
+                    <span class="result-id">ID: ${pet.id}</span>
+                </div>
+                
+                <div class="pet-main-info">
+                    <div class="pet-image-container">
+                        <img src="${pet.imageUrl}" alt="${pet.petName}" class="pet-main-image" onerror="this.style.display='none'">
+                    </div>
+                    <div class="pet-info-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Nome</span>
+                            <span class="detail-value">${pet.petName}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Tipo</span>
+                            <span class="detail-value">${pet.petType}</span>
+                        </div>
+                        ${pet.petBreed ? `
+                            <div class="detail-item">
+                                <span class="detail-label">Razza</span>
+                                <span class="detail-value">${pet.petBreed}</span>
+                            </div>
+                        ` : ''}
+                        ${pet.petAge ? `
+                            <div class="detail-item">
+                                <span class="detail-label">Età</span>
+                                <span class="detail-value">${pet.petAge}</span>
+                            </div>
+                        ` : ''}
+                        ${pet.petGender ? `
+                            <div class="detail-item">
+                                <span class="detail-label">Sesso</span>
+                                <span class="detail-value">${pet.petGender}</span>
+                            </div>
+                        ` : ''}
+                        ${pet.petColor ? `
+                            <div class="detail-item">
+                                <span class="detail-label">Colore</span>
+                                <span class="detail-value">${pet.petColor}</span>
+                            </div>
+                        ` : ''}
+                        ${pet.petMicrochip ? `
+                            <div class="detail-item">
+                                <span class="detail-label">Microchip</span>
+                                <span class="detail-value">${pet.petMicrochip}</span>
+                            </div>
+                        ` : ''}
+                        <div class="detail-item">
+                            <span class="detail-label">Proprietario</span>
+                            <span class="detail-value">${pet.User ? pet.User.username : 'Sconosciuto'} (ID: ${pet.UserId})</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Registrato il</span>
+                            <span class="detail-value">${new Date(pet.createdAt).toLocaleDateString('it-IT')}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                ${pet.petNotes ? `
+                    <div class="pet-notes">
+                        <h4>Note:</h4>
+                        <p class="notes-content">${pet.petNotes}</p>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+
+        this.showResults();
+    }
+
+    showLoading() {
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultsContent = document.getElementById('resultsContent');
+        
+        resultsContent.innerHTML = '<div class="loading">🔍 Ricerca in corso...</div>';
+        resultsContainer.style.display = 'block';
+    }
+
+    showResults() {
+        const resultsContainer = document.getElementById('resultsContainer');
+        resultsContainer.style.display = 'block';
+    }
+
+    hideResults() {
+        const resultsContainer = document.getElementById('resultsContainer');
+        resultsContainer.style.display = 'none';
+    }
+
+    showNoResults(message) {
+        const resultsHeader = document.getElementById('resultsHeader');
+        const resultsContent = document.getElementById('resultsContent');
+
+        resultsHeader.textContent = 'Nessun risultato';
+        resultsContent.innerHTML = `<div class="no-results">${message}</div>`;
+        
+        this.showResults();
+    }
+
+    showError(message) {
+        const resultsHeader = document.getElementById('resultsHeader');
+        const resultsContent = document.getElementById('resultsContent');
+
+        resultsHeader.textContent = 'Errore';
+        resultsContent.innerHTML = `<div class="error-message">❌ ${message}</div>`;
+        
+        this.showResults();
+    }
+}
+
+// Inizializza l'applicazione quando il DOM è caricato
+document.addEventListener('DOMContentLoaded', () => {
+    new PetFinderSearch();
+});
+    </script>
 </body>
 </html>
